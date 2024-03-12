@@ -1,0 +1,8 @@
+C:/Users/jmc_o/Documents/A4_S2/INFI/Code/build/CMakeFiles/ALL_BUILD.dir
+C:/Users/jmc_o/Documents/A4_S2/INFI/Code/build/CMakeFiles/ZERO_CHECK.dir
+C:/Users/jmc_o/Documents/A4_S2/INFI/Code/build/ERP/CMakeFiles/ERP.dir
+C:/Users/jmc_o/Documents/A4_S2/INFI/Code/build/ERP/CMakeFiles/ALL_BUILD.dir
+C:/Users/jmc_o/Documents/A4_S2/INFI/Code/build/MES/CMakeFiles/MES.dir
+C:/Users/jmc_o/Documents/A4_S2/INFI/Code/build/MES/CMakeFiles/ALL_BUILD.dir
+C:/Users/jmc_o/Documents/A4_S2/INFI/Code/build/UDP/CMakeFiles/UDP.dir
+C:/Users/jmc_o/Documents/A4_S2/INFI/Code/build/UDP/CMakeFiles/ALL_BUILD.dir

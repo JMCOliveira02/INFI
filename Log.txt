@@ -1,0 +1,38 @@
+
+
+---version 1.0---
+ERP
+	main
+		-Cria uma struct* (udpSocket) com as informações relevantes para a socket UDP	
+			-Apenas para poupar espaço na declaração de todas as variáveis
+			-É um apontador para poder ser usado por funções exteriores, lançando-a 
+			como referência
+		-Cria um std::vector de structs do tipo parsedOrder
+			-Vetor por enquanto para armazenar as encomendas
+		-Loop
+			-Recebe a encomenda em XML pela porta UDP
+			-Parcela e armazena os elementos da mensagem no primeiro elemento 
+			do vetor criado
+	UDP_comms
+		Var socketInfo : struct
+			-Uma struct para armazenamento de todos os dados necessários para abrir
+			a socket UDP
+		Func initializeSocket : int 
+			-Abre e configura a socket de acordo com os valores dados, guardando a 
+			socket aberta na variável sock da struct socketInfo
+		Func receiveData : int	
+			-Recebe os dados pela porta dada, verifica se há erros e adiciona um '\0' 
+			no final da mensagem, importante para o processamento XML
+	XML_utils
+		Var parsedOrder : struct 
+			-Uma struct para armazenamento de todos os elementos existentes no formato 
+			dado para encomendas 
+		Func parseOrder : parsedOrder 
+			-Parcela a mensagem recebida e retorna uma struct com os valores obtidos 
+		Func printOrder : void 
+			-Imprime os conteúdos dos elementos da struct parsedOrder dada
+
+MES	
+UDP	
+	-Apenas serve como cliente UDP para testes, lendo ficheiros e enviando por UDP 
+	para o ERP
