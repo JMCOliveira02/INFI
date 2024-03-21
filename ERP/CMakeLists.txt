@@ -4,12 +4,7 @@ project(ERP)
 
 include_directories(include)
 
-set(PROJECT_SOURCES
-        src/main.cpp
-        src/tiniXML2.cpp
-        src/UDP_comms.cpp 
-        src/XML_utils.cpp
-)
+file(GLOB PROJECT_SOURCES src/*.cpp)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 

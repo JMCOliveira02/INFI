@@ -1,4 +1,4 @@
-# Install script for directory: C:/Users/jmc_o/Documents/A4_S2/INFI/Code/ERP
+# Install script for directory: C:/Users/jmc_o/Documents/A4_S2/INFI/Code/INFI/ERP
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)

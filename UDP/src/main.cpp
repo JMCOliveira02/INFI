@@ -57,12 +57,12 @@ int main()
     inet_pton(AF_INET, "127.0.0.1", &server_addr.sin_addr); // Change this to your server's IP address
 
     // Send the message
-    int fileNumber = 1;
+    int fileNumber = 0;
     char fileChar = 'a';
     while (1)
     {
         std::cin.get();
-        filename << "C:/Users/jmc_o/Documents/A4_S2/INFI/code/Sample_orders/command"
+        filename << "Sample_orders/command"
                  << fileNumber++
                  << ".xml";
 
@@ -75,7 +75,7 @@ int main()
             filename.str("");
             message.clear();
 
-            filename << "C:/Users/jmc_o/Documents/A4_S2/INFI/code/Sample_orders/command"
+            filename << "Sample_orders/command"
                      << --fileNumber
                      << fileChar++
                      << ".xml";
@@ -96,7 +96,7 @@ int main()
         std::cout << "Sending message: " << std::endl
                   << message << std::endl;
 
-        iResult = sendto(sock, message.c_str(), message.length(), 0, (struct sockaddr *)&server_addr, sizeof(server_addr));
+        iResult = sendto(sock, message.c_str(), static_cast<int>(message.length()), 0, (struct sockaddr *)&server_addr, sizeof(server_addr));
         if (iResult == SOCKET_ERROR)
         {
             std::cerr << "Error sending message: " << WSAGetLastError() << std::endl;

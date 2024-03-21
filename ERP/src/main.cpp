@@ -8,7 +8,6 @@
 
 int main()
 {
-    bool debug = true;
     // Setup communications
     socketInfo *udpSocket;
     udpSocket = new socketInfo;
@@ -23,21 +22,13 @@ int main()
 
     while (1)
     {
-        if (debug)
-            std::cout << "Waiting for data..." << std::endl;
-
-        // Receive data from the client
+        // Receive data from the socket
         if (receiveData(udpSocket) < 0)
         {
-            if (debug)
-                std::cerr << "Error receiving data." << std::endl;
             return -1;
         }
 
-        if (debug)
-            std::cout << "Received data: " << udpSocket->buffer << std::endl;
-
-        // Parse the received data
+        // Parse the data
         try
         {
             orderData.push_back(parseOrder(udpSocket->buffer));
@@ -48,6 +39,6 @@ int main()
             return -1;
         }
 
-        // printOrder(orderData.back());
-    }
+        // Store the data in the database
+        }
 }

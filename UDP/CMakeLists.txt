@@ -4,9 +4,7 @@ project(UDP)
 
 include_directories(include)
 
-set(PROJECT_SOURCES
-        src/main.cpp
-)
+file(GLOB PROJECT_SOURCES src/*.cpp)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 

@@ -27,7 +27,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-			"value" : "c:/Users/jmc_o/Documents/A4_S2/INFI/Code/build"
+			"value" : "c:/Users/jmc_o/Documents/A4_S2/INFI/Code/INFI/build"
 		},
 		{
 			"name" : "CMAKE_CACHE_MAJOR_VERSION",
@@ -431,7 +431,7 @@
 				}
 			],
 			"type" : "STATIC",
-			"value" : "C:/Users/jmc_o/Documents/A4_S2/INFI/Code/build/CMakeFiles/pkgRedirects"
+			"value" : "C:/Users/jmc_o/Documents/A4_S2/INFI/Code/INFI/build/CMakeFiles/pkgRedirects"
 		},
 		{
 			"name" : "CMAKE_GENERATOR",
@@ -491,7 +491,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-			"value" : "C:/Users/jmc_o/Documents/A4_S2/INFI/Code"
+			"value" : "C:/Users/jmc_o/Documents/A4_S2/INFI/Code/INFI"
 		},
 		{
 			"name" : "CMAKE_INSTALL_PREFIX",
@@ -1027,7 +1027,7 @@
 				}
 			],
 			"type" : "STATIC",
-			"value" : "C:/Users/jmc_o/Documents/A4_S2/INFI/Code/build/ERP"
+			"value" : "C:/Users/jmc_o/Documents/A4_S2/INFI/Code/INFI/build/ERP"
 		},
 		{
 			"name" : "ERP_IS_TOP_LEVEL",
@@ -1051,7 +1051,7 @@
 				}
 			],
 			"type" : "STATIC",
-			"value" : "C:/Users/jmc_o/Documents/A4_S2/INFI/Code/build"
+			"value" : "C:/Users/jmc_o/Documents/A4_S2/INFI/Code/INFI/build"
 		},
 		{
 			"name" : "ERP_MES_IS_TOP_LEVEL",
@@ -1075,7 +1075,7 @@
 				}
 			],
 			"type" : "STATIC",
-			"value" : "C:/Users/jmc_o/Documents/A4_S2/INFI/Code"
+			"value" : "C:/Users/jmc_o/Documents/A4_S2/INFI/Code/INFI"
 		},
 		{
 			"name" : "ERP_SOURCE_DIR",
@@ -1087,7 +1087,7 @@
 				}
 			],
 			"type" : "STATIC",
-			"value" : "C:/Users/jmc_o/Documents/A4_S2/INFI/Code/ERP"
+			"value" : "C:/Users/jmc_o/Documents/A4_S2/INFI/Code/INFI/ERP"
 		},
 		{
 			"name" : "MES_BINARY_DIR",
@@ -1099,7 +1099,7 @@
 				}
 			],
 			"type" : "STATIC",
-			"value" : "C:/Users/jmc_o/Documents/A4_S2/INFI/Code/build/MES"
+			"value" : "C:/Users/jmc_o/Documents/A4_S2/INFI/Code/INFI/build/MES"
 		},
 		{
 			"name" : "MES_IS_TOP_LEVEL",
@@ -1123,7 +1123,7 @@
 				}
 			],
 			"type" : "STATIC",
-			"value" : "C:/Users/jmc_o/Documents/A4_S2/INFI/Code/MES"
+			"value" : "C:/Users/jmc_o/Documents/A4_S2/INFI/Code/INFI/MES"
 		},
 		{
 			"name" : "UDP_BINARY_DIR",
@@ -1135,7 +1135,7 @@
 				}
 			],
 			"type" : "STATIC",
-			"value" : "C:/Users/jmc_o/Documents/A4_S2/INFI/Code/build/UDP"
+			"value" : "C:/Users/jmc_o/Documents/A4_S2/INFI/Code/INFI/build/UDP"
 		},
 		{
 			"name" : "UDP_IS_TOP_LEVEL",
@@ -1159,7 +1159,7 @@
 				}
 			],
 			"type" : "STATIC",
-			"value" : "C:/Users/jmc_o/Documents/A4_S2/INFI/Code/UDP"
+			"value" : "C:/Users/jmc_o/Documents/A4_S2/INFI/Code/INFI/UDP"
 		}
 	],
 	"kind" : "cache",

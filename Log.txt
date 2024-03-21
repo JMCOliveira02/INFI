@@ -36,3 +36,10 @@ MES
 UDP	
 	-Apenas serve como cliente UDP para testes, lendo ficheiros e enviando por UDP 
 	para o ERP
+
+---version 1.1---
+ERP
+	-Biblioteca tiniXML2 não suporta validação por DTP do ficheiro XML, portanto foi necessário instalar 
+	a biblioteca libXML2, que envolveu:
+		-Baixar o zip mais recente dos releases disponíveis no git da libXML
+		-Extrair para a pasta "C:/"

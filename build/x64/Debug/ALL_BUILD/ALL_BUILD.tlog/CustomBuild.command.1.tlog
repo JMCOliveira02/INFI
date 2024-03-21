@@ -1,6 +1,6 @@
-^C:\USERS\JMC_O\DOCUMENTS\A4_S2\INFI\CODE\CMAKELISTS.TXT
+^C:\USERS\JMC_O\DOCUMENTS\A4_S2\INFI\CODE\INFI\CMAKELISTS.TXT
 setlocal
-"C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -SC:/Users/jmc_o/Documents/A4_S2/INFI/Code -BC:/Users/jmc_o/Documents/A4_S2/INFI/Code/build --check-stamp-file C:/Users/jmc_o/Documents/A4_S2/INFI/Code/build/CMakeFiles/generate.stamp
+"C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -SC:/Users/jmc_o/Documents/A4_S2/INFI/Code/INFI -BC:/Users/jmc_o/Documents/A4_S2/INFI/Code/INFI/build --check-stamp-file C:/Users/jmc_o/Documents/A4_S2/INFI/Code/INFI/build/CMakeFiles/generate.stamp
 if %errorlevel% neq 0 goto :cmEnd
 :cmEnd
 endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
