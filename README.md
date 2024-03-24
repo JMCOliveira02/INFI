@@ -1,4 +1,4 @@
-# INFI
+# INFI_MES
 MES layer of a high level management and control of a factory floor simulator
 
 ## Dependencies
