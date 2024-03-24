@@ -173,17 +173,9 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </ProjectReference>
-    <ProjectReference Include="C:\Users\jmc_o\Documents\A4_S2\INFI\Code\INFI\build\ERP\ERP.vcxproj">
-      <Project>{9021CE68-B3D4-3D24-96F1-A69F0F4E8422}</Project>
-      <Name>ERP</Name>
-    </ProjectReference>
     <ProjectReference Include="C:\Users\jmc_o\Documents\A4_S2\INFI\Code\INFI\build\MES\MES.vcxproj">
       <Project>{C3DBEF15-2FA3-3623-A51F-ACDFDF5BD18C}</Project>
       <Name>MES</Name>
-    </ProjectReference>
-    <ProjectReference Include="C:\Users\jmc_o\Documents\A4_S2\INFI\Code\INFI\build\UDP\UDP.vcxproj">
-      <Project>{2F9B66DE-A9F5-3ACA-A091-95F278CFC9E3}</Project>
-      <Name>UDP</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

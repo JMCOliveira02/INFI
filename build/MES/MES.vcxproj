@@ -313,7 +313,6 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="C:\Users\jmc_o\Documents\A4_S2\INFI\Code\INFI\MES\src\UDP_comms.cpp" />
     <ClCompile Include="C:\Users\jmc_o\Documents\A4_S2\INFI\Code\INFI\MES\src\main.cpp" />
   </ItemGroup>
   <ItemGroup>

@@ -34,9 +34,7 @@ endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for each subdirectory.
-  include("C:/Users/jmc_o/Documents/A4_S2/INFI/Code/INFI/build/ERP/cmake_install.cmake")
   include("C:/Users/jmc_o/Documents/A4_S2/INFI/Code/INFI/build/MES/cmake_install.cmake")
-  include("C:/Users/jmc_o/Documents/A4_S2/INFI/Code/INFI/build/UDP/cmake_install.cmake")
 
 endif()
 

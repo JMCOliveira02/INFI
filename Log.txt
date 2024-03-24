@@ -43,3 +43,7 @@ ERP
 	a biblioteca libXML2, que envolveu:
 		-Baixar o zip mais recente dos releases disponíveis no git da libXML
 		-Extrair para a pasta "C:/"
+
+---version 2.0---
+ERP e UDP	
+	Separou-se o desenvolvimento do ERP e do MES, sendo que este repositório passa a ser apenas respetivo ao MES
