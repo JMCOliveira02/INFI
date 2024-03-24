@@ -46,4 +46,7 @@ ERP
 
 ---version 2.0---
 ERP e UDP	
-	Separou-se o desenvolvimento do ERP e do MES, sendo que este repositório passa a ser apenas respetivo ao MES
+	-Separou-se o desenvolvimento do ERP e do MES, sendo que este repositório passa a ser apenas respetivo ao MES
+MES	
+	-Lê uma encomenda de uma "base de dados" improvisada (db.txt) em que a primeira coluna é referente ao tipo de peça
+	e a segunda à quantidade
