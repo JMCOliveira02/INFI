@@ -4,5 +4,9 @@
 			"path": "../INFI_MES"
 		}
 	],
-	"settings": {}
+	"settings": {
+		"files.associations": {
+			"stdexcept": "cpp"
+		}
+	}
 }
