@@ -6,7 +6,12 @@
 	],
 	"settings": {
 		"files.associations": {
-			"stdexcept": "cpp"
+			"stdexcept": "cpp",
+			"iostream": "cpp",
+			"xstring": "cpp",
+			"string": "cpp",
+			"sstream": "cpp",
+			"xlocinfo": "cpp"
 		}
 	}
 }

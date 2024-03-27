@@ -8,7 +8,7 @@ find_package(open62541 REQUIRED)
 
 include_directories(include)
 
-file(GLOB PROJECT_SOURCES src/*.cpp)
+file(GLOB PROJECT_SOURCES src/*.cpp src/*.c)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
