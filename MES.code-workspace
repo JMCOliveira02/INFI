@@ -1,0 +1,17 @@
+{
+	"folders": [
+		{
+			"path": "../INFI_MES"
+		}
+	],
+	"settings": {
+		"files.associations": {
+			"stdexcept": "cpp",
+			"iostream": "cpp",
+			"xstring": "cpp",
+			"string": "cpp",
+			"sstream": "cpp",
+			"xlocinfo": "cpp"
+		}
+	}
+}
