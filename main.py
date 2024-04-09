@@ -5,6 +5,8 @@ from opcua import Client
 from cin import Cin
 from utils import setValueCheck
 from factory import *
+from importlib import reload
+
 
 
 
@@ -26,11 +28,13 @@ if __name__ == "__main__":
     
     try:
         client.connect()
-
-        cin1 = Cin(client, 1)
+        """cin1 = Cin(client, 1)
         cin1.get_nodes()
-        cin1.receivePieces(2, 1)
-        
+        cin1.receivePieces(2, 1) """
+
+        machine1.makePiece(3, 0)
+        storePiece(client, 0)
+
 
 
 

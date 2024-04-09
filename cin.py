@@ -1,6 +1,6 @@
 from opcua import Client
 from opcua import ua
-from utils import setValueCheck
+from utils import *
 
 class Cin:
     def __init__(self, client, Id):
