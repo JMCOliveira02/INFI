@@ -12,9 +12,12 @@ class Database:
             conn = psycopg2.connect(
                 host="db.fe.up.pt",
                 port="5432",
-                user=os.getenv('db_user'),
-                password=os.getenv('db_password'),
-                database=os.getenv('db_name')
+                user="sinfmeec15",
+                password="bogas",
+                database="sinfmeec15"
+                #user=os.getenv('db_user'),
+                #password=os.getenv('db_password'),
+               # database=os.getenv('db_name')
             )
 
         except psycopg2.Error as e:
@@ -52,4 +55,12 @@ class Database:
     def get_all_orders(self):
         return self.send_query(
             """SELECT * from "INFI".orders;"""
+        )
+    def get_all_orders_sorted(self):
+        return self.send_query(
+            """SELECT * from "INFI".orders order by duedate asc;"""
+        )
+    def get_earliest_order(self):
+        return self.send_query(
+            """SELECT * from "INFI".orders order by duedate asc limit 1;"""
         )

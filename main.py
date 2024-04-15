@@ -6,6 +6,7 @@ from cin import Cin
 from utils import setValueCheck
 from factory import *
 from database import *
+from orders import *
 from importlib import reload
 
 
@@ -25,15 +26,15 @@ if __name__ == "__main__":
         """cin1 = Cin(client, 1)
         cin1.get_nodes()
         cin1.receivePieces(2, 1) """
-        #db = Database()
-        #db.connect()
+        db = Database()
+        db.connect()
+        currOrder=parseOrderCSV(db.get_earliest_order())
+        print(f"Current Order: {currOrder.workpiece}")
+
         for i in range(12):
-            transformations[i] = machines[i].findTransformations(piece_ordered)
+            transformations[i] = machines[i].findTransformations(currOrder.workpiece)
         
         chosenMachineId, chooseTransformation = chooseTransformation(transformations)
-
-        print(chosenMachineId, chooseTransformation)
-
 
         machines[chosenMachineId - 1].performTransformation(chooseTransformation, 0)
 
