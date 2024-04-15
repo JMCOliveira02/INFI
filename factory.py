@@ -28,6 +28,7 @@ storeRecipe = Recipe(storeTransformation, 0, -1)
 class M1:
     tool = [1, 2, 3]
     P1P3 = Transformation(1, 1, 3, 45000)
+    P4P6 = Transformation(2, 4, 6, 25000)
     P2P8 = Transformation(1, 2, 8, 45000)
     P3P4a = Transformation(2, 3, 4, 15000)
     P3P4b = Transformation(3, 3, 4, 25000)
@@ -36,6 +37,7 @@ class M1:
 class M2:
     tool = [1, 2, 3]
     P1P3 = Transformation(1, 1, 3, 45000)
+    P4P6 = Transformation(2, 4, 6, 25000)
     P2P8 = Transformation(1, 2, 8, 45000)
     P3P4a = Transformation(2, 3, 4, 15000)
     P3P4b = Transformation(3, 3, 4, 25000)
@@ -77,13 +79,11 @@ class Machine:
         self.type = type
         self.activeTool = activeTool
     
-    def makePiece(self, piece, index):
-        possibleTransformations = self.findTransformations(piece)
-        chosenTransformation = self.chooseTransformation(possibleTransformations)
+    def performTransformation(self, transformation, index):
 
-        toolAction = self.calcToolAction(chosenTransformation)
+        toolAction = self.calcToolAction(transformation)
 
-        recipe = Recipe(chosenTransformation, toolAction, self.Id)
+        recipe = Recipe(transformation, toolAction, self.Id)
         recipe.getNodes(self.client, index)
 
         sendRecipe(recipe)
@@ -118,9 +118,20 @@ class Machine:
     def findTransformations(self, piece):
         return [transformation for transformation in self.type.__dict__.values() if isinstance(transformation, Transformation) and transformation.finalPiece == piece]
 
-    def chooseTransformation(self, transformations):
-        return min(transformations, key=lambda transformation: transformation.time)
-
+def chooseTransformation(transformations):
+    min_time = float('inf')
+    best_machine_id = None
+    best_transformation = None
+    for machine_id in range(12):
+        for transformation in transformations[machine_id]:
+            if transformation.time < min_time:
+                min_time = transformation.time
+                best_machine_id = machine_id
+                best_transformation = transformation
+            elif transformation.time == min_time and machine_id < best_machine_id:
+                best_machine_id = machine_id
+                best_transformation = transformation
+    return best_machine_id + 1, best_transformation
 
 
         

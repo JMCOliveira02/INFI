@@ -5,7 +5,9 @@ from opcua import Client
 from cin import Cin
 from utils import setValueCheck
 from factory import *
+from database import *
 from importlib import reload
+
 
 
 
@@ -13,26 +15,28 @@ from importlib import reload
 
 if __name__ == "__main__":
     client = Client("opc.tcp://127.0.0.1:4840")
-    machine1 = Machine(client, M1, 1, 1)
-    machine2 = Machine(client, M2, 2, 1)
-    machine3 = Machine(client, M1, 3, 1)
-    machine4 = Machine(client, M2, 4, 1)
-    machine5 = Machine(client, M1, 5, 1)
-    machine6 = Machine(client, M2, 6, 1)
-    machine7 = Machine(client, M3, 7, 1)
-    machine8 = Machine(client, M4, 8, 1)
-    machine9 = Machine(client, M3, 9, 1)
-    machine10 = Machine(client, M4, 10, 1)
-    machine11 = Machine(client, M3, 11, 1)
-    machine12 = Machine(client, M4, 12, 1)
-    
+    machine_types = [M1, M2, M1, M2, M1, M2, M3, M4, M3, M4, M3, M4]
+    machines = [Machine(client, machine_types[i], i+1, 1) for i in range(12)]
+    piece_ordered = 3
+    transformations = {}
+
     try:
         client.connect()
         """cin1 = Cin(client, 1)
         cin1.get_nodes()
         cin1.receivePieces(2, 1) """
+        #db = Database()
+        #db.connect()
+        for i in range(12):
+            transformations[i] = machines[i].findTransformations(piece_ordered)
+        
+        chosenMachineId, chooseTransformation = chooseTransformation(transformations)
 
-        machine1.makePiece(3, 0)
+        print(chosenMachineId, chooseTransformation)
+
+
+        machines[chosenMachineId - 1].performTransformation(chooseTransformation, 0)
+
         storePiece(client, 0)
 
 
