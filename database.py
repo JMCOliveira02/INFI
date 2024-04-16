@@ -62,5 +62,5 @@ class Database:
         )
     def get_earliest_order(self):
         return self.send_query(
-            """SELECT * from "INFI".orders order by duedate asc limit 1;"""
+            """SELECT * from "INFI".orders order by duedate limit 1;"""
         )

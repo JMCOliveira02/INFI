@@ -58,10 +58,12 @@ class M4:
     P8P7 = Transformation(6, 8, 7, 15000)
 
 def sendRecipe(recipe):
+
     setValueCheck(recipe.pieceInNode, recipe.initialPiece, ua.VariantType.Int16)
     setValueCheck(recipe.timeNode, recipe.time, ua.VariantType.UInt32)
     setValueCheck(recipe.toolActionNode, recipe.toolAction, ua.VariantType.Int16)
     setValueCheck(recipe.idNode, recipe.machineId, ua.VariantType.Int16)
+    setValueCheck(recipe.endNode, False, ua.VariantType.Boolean)
 
 def storePiece(client, index):
     recipe = Recipe(storeTransformation, 0, -1)
