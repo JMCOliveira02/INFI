@@ -17,7 +17,7 @@ class Database:
                 database="sinfmeec15"
                 #user=os.getenv('db_user'),
                 #password=os.getenv('db_password'),
-               # database=os.getenv('db_name')
+                #database=os.getenv('db_name')
             )
 
         except psycopg2.Error as e:
