@@ -34,9 +34,9 @@ if __name__ == "__main__":
         for i in range(12):
             transformations[i] = machines[i].findTransformations(currOrder.workpiece)
         
-        chosenMachineId, chooseTransformation = chooseTransformation(transformations)
+        chosenMachineId, chosenTransformation = chooseTransformation(transformations)
 
-        machines[chosenMachineId - 1].performTransformation(chooseTransformation, 0)
+        machines[chosenMachineId - 1].performTransformation(chosenTransformation, 0)
 
         storePiece(client, 0)
 
