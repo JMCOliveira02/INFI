@@ -1,62 +1,44 @@
 import sys
 sys.path.insert(0, "..")
-from opcua import ua
-from opcua import Client
-from cin import Cin
-from utils import setValueCheck
-from factory import *
-from database import *
-from orders import *
-from scheduling import *
-from importlib import reload
-
-
-# **********Variáveis de configuração**********
-
-# Número de máquinas
-numMachines = 12
-# Tempo mudança de ferramenta
-tool_change_time = 30000 # ms
-
-# Transformações possíveis e respetivos tempos
-# edges = [
-#     # nó 1, nó 2, ferramenta, tempo
-#     ('P1', 'P3', "T1", 45000),
-#     ('P4', 'P6', "T2", 25000),
-#     ('P2', 'P8', "T1", 45000),
-#     ('P3', 'P4', "T2", 15000),
-#     ('P3', 'P4', "T3", 25000),
-#     ('P4', 'P7', "T3", 15000),
-#     ('P4', 'P5', "T4", 25000),
-#     ('P8', 'P9', "T5", 45000),
-#     ('P8', 'P7', "T6", 15000)
-# ]
-
-# *********************************************
+import modules.shopfloor.gen_cin as gen_cin
+from modules.mes.scheduling import *
+from modules.communications.plc_communications import *
+import traceback
+import time
 
 
 
-# if __name__ == "__main__":
-#     client = Client("opc.tcp://127.0.0.1:4840")
-#     # Define layout da fábrica
-#     machine_types = [M1, M2, M1, M2, M1, M2, M3, M4, M3, M4, M3, M4]
-#     # Inicialização das máquinas
-#     machines = [Machine(client, machine_types[i], i+1, 1) for i in range(numMachines)]
+def initialize(show_credits=True):
+    
+    if credits:
+        printAuthorsCredits()
+  
+    # Inicializa cliente OPC-UA
+    client = PLCCommunications(CONSTANTS["opcua_connection"])
 
-#     try:
-#         # Grafo com todos os caminhos possíveis
-#         G = generateGraph(edges)
+    # Conecta ao cliente OPC-UA
+    try:
+        client.clientConnect()
+    except Exception as e:
+        if e is NameError.ClientAlreadyConnected:
+            print("Error:", e)
+            pass
+        elif e is NameError.NoConnectionProvided:
+            print("Error:", e)
+            sys.exit()
+        else:
+            print(traceback.format_exc())
+            sys.exit()
 
-#         # Encontrar os caminhos possíveis para a peça P6
-#         nodes_, edges_ = findTransformations(G, 'P7')
-#         print("Nodes:")
-#         print(nodes_)
-#         print("Edges:")
-#         print(edges_)
 
+    # Gerar grafo e grafo simples
+    G = generateGraph()
+    G_simple = generateSimpleGraph()
 
-#         # Conecta cliente OPC-UA
-#         client.connect()
+    # inicialização de classes
+    cin = gen_cin.GenCin(client=client)
+
+    return client, G, G_simple, cin
 
 #         # # Inicializa base de dados
 #         # db = Database()
@@ -87,12 +69,44 @@ tool_change_time = 30000 # ms
 
 
 
-#     except Exception as e:
-#         print(e)
-#     finally:
-#         client.disconnect()
+if __name__ == "__main__":
+
+    # inicialização
+    client, G, G_simple, cin = initialize()
+
+    while True:
+        try:
+            cin.spawnPieces([1, 1])
+            # cin.spawnPieces(1, 3)
+            # cin.spawnPieces(2, 3)
+            # time.sleep(10)
+            #schedule(G_simple, G, client=client, piece='P5')
+
+            # terminar programa
+            client.clientDisconnect()
+            sys.exit()
 
 
-# while True:
-        
-#     pass
+        except Exception as e:
+            if e is NameError.NoGeneratorsAvailable:
+                print("Error:", e)
+                pass
+            else:
+                print(traceback.format_exc())
+                client.clientDisconnect()
+                sys.exit()
+
+
+        # try:
+        #     schedule(G_simple, G, client=client, piece='P5')
+        #     client.clientDisconnect()
+        #     sys.exit()
+            
+        # except Exception as e:
+        #     if e is NameError:
+        #         print("Error:", e)
+        #         pass
+        #     else:
+        #         print(traceback.format_exc())
+        #         client.clientDisconnect()
+        #         sys.exit()
