@@ -1,11 +1,16 @@
 # INFI_MES
-MES layer of a high level management and control of a factory floor simulator
+MES layer of a high level management and control of a factory floor simulator.
 
-## Dependencies
-### Python
-#### OPC-UA library installation
-```
-pip install opcua
-pip install opcua-client
-pip install opcua-webclient
-```
+## Usage
+
+- step to apply this MES implementation to your shop floor.
+    - Create Virtual Environment. Version of Python used 3.11.9.
+    - Install requirements using 
+        ```
+        pip install -r requirements.txt
+        ```
+    - Provide the input and output path in **constants.yaml** file.
+    - Run the MES using 
+        ```
+        python main.py
+        ```
