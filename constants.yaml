@@ -1,0 +1,120 @@
+# Cliente OPC-UA
+opcua_connection: "opc.tcp://127.0.0.1:4840"
+
+# Gerador de peças
+GenCin:
+  NamespaceIndex: "ns=4;s=|var|CODESYS Control Win V3 x64.Application.PLC_PGR_wh_in.Gen_Cin"
+  Gen1: "[1]"
+  Gen2: "[2]"
+  Gen3: "[3]"
+  Gen4: "[4]"
+  Pieces: ".num_pieces"
+  Finish: ".finish"
+
+# # Armazém superior peças totais
+TopWh:
+  NamespaceIndex: "ns=4;s=|var|CODESYS Control Win V3 x64.Application.Variables.top_wh"
+  Type1: "[1]"
+  Type2: "[2]"
+  Type3: "[3]"
+  Type4: "[4]"
+  Type5: "[5]"
+  Type6: "[6]"
+  Type7: "[7]"
+  Type8: "[8]"
+  Type9: "[9]"
+
+# Armazém superior peças disponíveis
+AvailableTopWh:
+  NamespaceIndex: "ns=4;s=|var|CODESYS Control Win V3 x64.Application.Variables.available_top_wh"
+  Type1: "[1]"
+  Type2: "[2]"
+  Type3: "[3]"
+  Type4: "[4]"
+  Type5: "[5]"
+  Type6: "[6]"
+  Type7: "[7]"
+  Type8: "[8]"
+  Type9: "[9]"
+
+# Armazém inferior peças totais
+BottomWh:
+  NamespaceIndex: "ns=4;s=|var|CODESYS Control Win V3 x64.Application.Variables.bottom_wh"
+  Type1: "[1]"
+  Type2: "[2]"
+  Type3: "[3]"
+  Type4: "[4]"
+  Type5: "[5]"
+  Type6: "[6]"
+  Type7: "[7]"
+  Type8: "[8]"
+  Type9: "[9]"
+
+# Armazém inferior peças disponíveis
+AvailableBottomWh:
+  NamespaceIndex: "ns=4;s=|var|CODESYS Control Win V3 x64.Application.Variables.available_bottom_wh"
+  Type1: "[1]"
+  Type2: "[2]"
+  Type3: "[3]"
+  Type4: "[4]"
+  Type5: "[5]"
+  Type6: "[6]"
+  Type7: "[7]"
+  Type8: "[8]"
+  Type9: "[9]"
+
+# Estado das máquinas
+MachineTool:
+  NamespaceIndex: "ns=4;s=|var|CODESYS Control Win V3 x64.Application.Variables.cur_machine_tool"
+  Machine1: "[1]"
+  Machine2: "[2]"
+  Machine3: "[3]"
+  Machine4: "[4]"
+  Machine5: "[5]"
+  Machine6: "[6]"
+  Machine7: "[7]"
+  Machine8: "[8]"
+  Machine9: "[9]"
+  Machine10: "[10]"
+  Machine11: "[11]"
+  Machine12: "[12]"
+
+# Ferramenta atual das máquinas
+MachineState:
+  NamespaceIndex: "ns=4;s=|var|CODESYS Control Win V3 x64.Application.Variables.machine_state"
+  Machine1: "[1]"
+  Machine2: "[2]"
+  Machine3: "[3]"
+  Machine4: "[4]"
+  Machine5: "[5]"
+  Machine6: "[6]"
+  Machine7: "[7]"
+  Machine8: "[8]"
+  Machine9: "[9]"
+  Machine10: "[10]"
+  Machine11: "[11]"
+  Machine12: "[12]"
+
+# Receitas
+Recipes:
+  NamespaceIndex: "ns=4;s=|var|CODESYS Control Win V3 x64.Application.Variables.recipe"
+  Recipe0: "[0]"
+  Recipe1: "[1]"
+  Recipe2: "[2]"
+  Recipe3: "[3]"
+  Recipe4: "[4]"
+  Recipe5: "[5]"
+  Recipe6: "[6]"
+  Recipe7: "[7]"
+  Recipe8: "[8]"
+  Recipe9: "[9]"
+  Recipe10: "[10]"
+  Recipe11: "[11]"
+
+# Envio de peças (encomenda)
+WhExtractor:
+  NamespaceIndex: "ns=4;s=|var|CODESYS Control Win V3 x64.Application.PLC_PGR_wh_out.Warehouse_extractor"
+  Number1: "[1]"
+  Number2: "[2]"
+  Number3: "[3]"
+  Number4: "[4]"
