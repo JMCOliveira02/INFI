@@ -35,7 +35,7 @@ class PLCCommunications:
         elif self.opcua_connection is None:
             raise NameError("No OPC-UA connection provided!", name="NoConnectionProvided")
         
-        print(emoji.emojize('Connecting to OPC-UA server... '))
+        print('Connecting to OPC-UA server...', end=" ", flush=True)
         self.client = Client(self.opcua_connection)
         self.client.connect()
         print(emoji.emojize('Connected to OPC-UA server! :check_mark_button:'))
@@ -52,7 +52,7 @@ class PLCCommunications:
         return:
             None
         '''
-        print('Disconnecting from OPC-UA server...')
+        print('Disconnecting from OPC-UA server...', end=" ", flush=True)
         self.client.disconnect()
         print(emoji.emojize('Disconnected from OPC-UA server! :check_mark_button:'))
 
@@ -95,7 +95,7 @@ class PLCCommunications:
         return:
             piece: número de peças no armazém superior da máquina.
         '''
-        num_pieces = self.client.get_node(CONSTANTS["AvailableTopWh"]["NamespaceIndex"] + "[" + str(type) + "]")
+        num_pieces = self.client.get_node(CONSTANTS["TopWh"]["NamespaceIndex"] + "[" + str(type) + "]")
         return num_pieces.get_value()
     
 

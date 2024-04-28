@@ -1,6 +1,8 @@
 import modules.communications.plc_communications as plc
+from modules.mes.scheduling import cur_pieces_top_wh, updatePiecesTopWh
 import threading
 import time
+import emoji
 
 class GenCin:
     def __init__(self, client: plc.PLCCommunications):
@@ -24,12 +26,20 @@ class GenCin:
         args:
             num_pieces (list): número de peças a serem geradas de cada tipo. [1, 3] significa 1 peça do tipo 1 e 3 peças do tipo 2.
         return:
-            Exception: caso o número de peças seja inválido ou não haja geradores disponíveis.
+            InvalidNumberPieces (Exception): caso o número de peças seja inválido ou não haja geradores disponíveis.
         '''
         # validar número de peças
-        if num_pieces[0] < 0 or num_pieces[1] < 0:
-            raise ValueError("Number of pieces must be greater than 0.", name="InvalidNumberPieces")
+        if any(piece < 0 for piece in num_pieces):
+            raise NameError("\033[1mShop Floor\033[0m Invalid number of pieces in supplier's order.", name="InvalidNumberPieces")
         
+        print(emoji.emojize(f"\n\033[1m[Shop Floor]\033[0m: Supplier's order received and accepted. :check_mark_button:\n\033[4mOrder summary\033[0m:\n\tType 1 -> {num_pieces[0]} pieces\n\tType 2 -> {num_pieces[1]} pieces"))
+        print("Working...", end=" ", flush=True)
+
+        updatePiecesTopWh(self.client)
+        prev_type1 = cur_pieces_top_wh["P1"]
+        prev_type2 = cur_pieces_top_wh["P2"]
+
+
         # Se número de peças de cada tipo for maior que 1, dividir por duas threads cada tipo
         # Por exemplo, se número de peças do tipo 1 for 3, então gera 2 threads, uma envia 2 peças e outra uma peça
         generators = [(1, 2), (3, 4)]
@@ -49,3 +59,10 @@ class GenCin:
 
         for t in threads:
             t.join()
+
+        # Esperar peças entrar no armazém
+        updatePiecesTopWh(self.client)
+        while (cur_pieces_top_wh['P1'] < (prev_type1 + num_pieces[0])) or (cur_pieces_top_wh['P2'] < (prev_type2 + num_pieces[1])):
+            time.sleep(0.5)
+            updatePiecesTopWh(self.client)
+        print(f"Supplier's order handed over. \n\033[4mCurrent number of pieces available\033[0m:\n\tType 1 -> {cur_pieces_top_wh['P1']} pieces\n\tType 2 -> {cur_pieces_top_wh['P2']} pieces\n")
