@@ -10,7 +10,7 @@ import time
 
 def initialize(show_credits=True):
     
-    if credits:
+    if show_credits:
         printAuthorsCredits()
   
     # Inicializa cliente OPC-UA
@@ -76,9 +76,7 @@ if __name__ == "__main__":
 
     while True:
         try:
-            cin.spawnPieces([1, 1])
-            # cin.spawnPieces(1, 3)
-            # cin.spawnPieces(2, 3)
+            cin.spawnPieces([3, 3])
             # time.sleep(10)
             #schedule(G_simple, G, client=client, piece='P5')
 
@@ -88,9 +86,10 @@ if __name__ == "__main__":
 
 
         except Exception as e:
-            if e is NameError.NoGeneratorsAvailable:
-                print("Error:", e)
-                pass
+            if e.name == "InvalidNumberPieces":
+                print("InvalidNumberPieces:", e.args[0])
+                client.clientDisconnect()
+                sys.exit()
             else:
                 print(traceback.format_exc())
                 client.clientDisconnect()
