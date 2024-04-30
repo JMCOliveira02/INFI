@@ -1,8 +1,12 @@
 import sys
 sys.path.insert(0, "..")
-import modules.shopfloor.gen_cin as gen_cin
-from modules.mes.scheduling import *
-from modules.communications.plc_communications import *
+import modules.mes.production_order as production_order
+from modules.communications.plc_communications import PLCCommunications
+from modules.mes.transformations import generateGrahps
+from modules.mes.scheduling import Scheduling
+from modules.shopfloor.recipes import Recipe
+from modules.shopfloor.gen_cin import GenCin
+from utils import *
 import traceback
 import time
 
@@ -14,31 +18,25 @@ def initialize(show_credits=True):
         printAuthorsCredits()
   
     # Inicializa cliente OPC-UA
-    client = PLCCommunications(CONSTANTS["opcua_connection"])
+    client_connection = CONSTANTS["opcua_connection"]
+    client = PLCCommunications(opcua_connection=client_connection)
 
     # Conecta ao cliente OPC-UA
     try:
         client.clientConnect()
     except Exception as e:
-        if e is NameError.ClientAlreadyConnected:
-            print("Error:", e)
-            pass
-        elif e is NameError.NoConnectionProvided:
-            print("Error:", e)
-            sys.exit()
-        else:
-            print(traceback.format_exc())
-            sys.exit()
-
+        print(traceback.format_exc())
+        sys.exit()
 
     # Gerar grafo e grafo simples
-    G = generateGraph()
-    G_simple = generateSimpleGraph()
+    G, G_simple = generateGrahps()
+
+    schedule = Scheduling(client)
 
     # inicialização de classes
-    cin = gen_cin.GenCin(client=client)
+    cin = GenCin(client=schedule.client)
 
-    return client, G, G_simple, cin
+    return client, schedule, G, G_simple, cin
 
 #         # # Inicializa base de dados
 #         # db = Database()
@@ -71,23 +69,26 @@ def initialize(show_credits=True):
 
 if __name__ == "__main__":
 
+    recipes = [Recipe]*12
+
     # inicialização
-    client, G, G_simple, cin = initialize()
+    client, schedule, G, G_simple, cin = initialize()
+
+    po = [3, 5, "2021-06-01"]
+
+    production_order_ = production_order.ProductionOrder(po)
+    production_order_.printProductionOrder()
 
     while True:
         try:
-            cin.spawnPieces([3, 3])
-            # time.sleep(10)
-            #schedule(G_simple, G, client=client, piece='P5')
-
-            # terminar programa
+            # para cada peça escalorar transformação e atribuir a receita
+            production_order_.generateRecipes()   
             client.clientDisconnect()
             sys.exit()
 
-
         except Exception as e:
             if e.name == "InvalidNumberPieces":
-                print("InvalidNumberPieces:", e.args[0])
+                print(e.args[0])
                 client.clientDisconnect()
                 sys.exit()
             else:
