@@ -97,7 +97,7 @@ MachineState:
 
 # Receitas
 Recipes:
-  NamespaceIndex: "ns=4;s=|var|CODESYS Control Win V3 x64.Application.Variables.recipe"
+  NamespaceIndex: "ns=4;s=|var|CODESYS Control Win V3 x64.Application.Variables.recipes"
   Recipe0: "[0]"
   Recipe1: "[1]"
   Recipe2: "[2]"
@@ -110,6 +110,11 @@ Recipes:
   Recipe9: "[9]"
   Recipe10: "[10]"
   Recipe11: "[11]"
+  End: ".end"
+  MachineId: ".machine_id"
+  PieceIn: ".piece_in"
+  Time: ".time_"
+  Tool: ".tool"
 
 # Envio de peças (encomenda)
 WhExtractor:
