@@ -84,18 +84,27 @@ if __name__ == "__main__":
     # inicialização
     client, schedule, G, G_simple, cin, db = initialize()
 
-    po = [3, 5, "2021-06-01"]
+    #po = [3, 5, "2021-06-01"]
 
-    production_order_ = production_order.ProductionOrder(po)
-    production_order_.printProductionOrder()
+    #production_order_ = production_order.ProductionOrder(po)
+    #production_order_.printProductionOrder()
 
     # Atualiza tempo inicial na DB 
-    db.update_initial_time()
+    initialTime = db.update_initial_time()
+    currTimeSeconds = (datetime.datetime.now() - initialTime).seconds
+    day = currTimeSeconds / 60
             
             
 
     while True:
-        try:
+        currTimeSeconds = (datetime.datetime.now() - initialTime).seconds
+        day = currTimeSeconds // 60
+        print(currTimeSeconds, day)
+
+        # Simular o tempo de execução de cada loop
+        #time.sleep(0.5)
+        
+        """ try:
             # para cada peça escalorar transformação e atribuir a receita
             production_order_.generateRecipes()   
             client.clientDisconnect()
@@ -109,7 +118,7 @@ if __name__ == "__main__":
             else:
                 print(traceback.format_exc())
                 client.clientDisconnect()
-                sys.exit()
+                sys.exit() """
 
 
         # try:
