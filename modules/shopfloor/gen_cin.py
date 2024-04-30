@@ -1,16 +1,17 @@
-import modules.communications.plc_communications as plc
+import modules.communications.plc_communications as PLCCommunications
 from modules.mes.scheduling import cur_pieces_top_wh, updatePiecesTopWh
 import threading
 import time
 import emoji
+from utils import bcolors
 
-class GenCin:
-    def __init__(self, client: plc.PLCCommunications):
+class GenCin():
+    def __init__(self, client: PLCCommunications):
         self.client = client
 
 
-
-    def _spawnPieces_thread(self, generator: int, num_pieces: int):
+    # método privado
+    def __spawnPieces_thread(self, generator: int, num_pieces: int):
         # realiza tarefa
         self.client.incomingPiece(generator, num_pieces)
 
@@ -30,9 +31,9 @@ class GenCin:
         '''
         # validar número de peças
         if any(piece < 0 for piece in num_pieces):
-            raise NameError("\033[1mShop Floor\033[0m Invalid number of pieces in supplier's order.", name="InvalidNumberPieces")
+            raise NameError(f"\n{bcolors.BOLD+bcolors.FAIL}[ERROR]{bcolors.ENDC+bcolors.ENDC} InvalidNumberPieces: Invalid number of pieces in supplier's order. (Shop Floor)", name="InvalidNumberPieces")
         
-        print(emoji.emojize(f"\n\033[1m[Shop Floor]\033[0m: Supplier's order received and accepted. :check_mark_button:\n\033[4mOrder summary\033[0m:\n\tType 1 -> {num_pieces[0]} pieces\n\tType 2 -> {num_pieces[1]} pieces"))
+        print(emoji.emojize(f"\n{bcolors.BOLD}[Shop Floor]{bcolors.ENDC}: Supplier's order received and accepted. :check_mark_button:\n\033[4mOrder summary\033[0m:\n\tType 1 -> {num_pieces[0]} pieces\n\tType 2 -> {num_pieces[1]} pieces"))
         print("Working...", end=" ", flush=True)
 
         updatePiecesTopWh(self.client)
@@ -48,10 +49,10 @@ class GenCin:
         for generator, num_piece in zip(generators, num_pieces):
             if num_piece > 1:
                 for i in range(2):
-                    t = threading.Thread(target=self._spawnPieces_thread, args=(generator[i], num_piece // 2 + (num_piece % 2 if i == 1 else 0)))
+                    t = threading.Thread(target=self.__spawnPieces_thread, args=(generator[i], num_piece // 2 + (num_piece % 2 if i == 1 else 0)))
                     threads.append(t)
             elif num_piece == 1:
-                t = threading.Thread(target=self._spawnPieces_thread, args=(generator[0], 1))
+                t = threading.Thread(target=self.__spawnPieces_thread, args=(generator[0], 1))
                 threads.append(t)
 
         for t in threads:
@@ -65,4 +66,4 @@ class GenCin:
         while (cur_pieces_top_wh['P1'] < (prev_type1 + num_pieces[0])) or (cur_pieces_top_wh['P2'] < (prev_type2 + num_pieces[1])):
             time.sleep(0.5)
             updatePiecesTopWh(self.client)
-        print(f"Supplier's order handed over. \n\033[4mCurrent number of pieces available\033[0m:\n\tType 1 -> {cur_pieces_top_wh['P1']} pieces\n\tType 2 -> {cur_pieces_top_wh['P2']} pieces\n")
+        print(f"Supplier's order handed over. \n{bcolors.UNDERLINE}Current number of pieces available{bcolors.ENDC}:\n\tType 1 -> {cur_pieces_top_wh['P1']} pieces\n\tType 2 -> {cur_pieces_top_wh['P2']} pieces")
