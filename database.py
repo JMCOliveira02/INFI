@@ -1,6 +1,6 @@
 import psycopg2
-import os
-
+from utils import bcolors
+import emoji
 
 class Database:
     def __init__(self) -> None:
@@ -12,20 +12,21 @@ class Database:
             conn = psycopg2.connect(
                 host="db.fe.up.pt",
                 port="5432",
-                user="sinfmeec15",
-                password="bogas",
-                database="sinfmeec15"
+                user="infind202407",
+                password="infinito",
+                database="infind202407"
                 #user=os.getenv('db_user'),
                 #password=os.getenv('db_password'),
                # database=os.getenv('db_name')
             )
+            print(f'\n{bcolors.BOLD}[Communications]{bcolors.ENDC}: Connecting to Data Base...', end=" ", flush=True)
 
         except psycopg2.Error as e:
             print("Error connecting to the database:")
             print(e)
 
         else:
-            print("Connection to database established successfully")
+            print(emoji.emojize('Connected to Data Base! :check_mark_button:'))
         
         return conn
     

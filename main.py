@@ -7,8 +7,10 @@ from modules.mes.scheduling import Scheduling
 from modules.shopfloor.recipes import Recipe
 from modules.shopfloor.gen_cin import GenCin
 from utils import *
+from database import *
 import traceback
 import time
+import datetime
 
 
 
@@ -28,6 +30,15 @@ def initialize(show_credits=True):
         print(traceback.format_exc())
         sys.exit()
 
+    # Conecta à base de dados
+    try:
+        db = Database()
+        db.connect()
+    except Exception as e:
+        print(traceback.format_exc())
+        sys.exit()
+
+
     # Gerar grafo e grafo simples
     G, G_simple = generateGrahps()
 
@@ -36,7 +47,7 @@ def initialize(show_credits=True):
     # inicialização de classes
     cin = GenCin(client=schedule.client)
 
-    return client, schedule, G, G_simple, cin
+    return client, schedule, G, G_simple, cin, db
 
 #         # # Inicializa base de dados
 #         # db = Database()
@@ -72,12 +83,24 @@ if __name__ == "__main__":
     recipes = [Recipe]*12
 
     # inicialização
-    client, schedule, G, G_simple, cin = initialize()
+    client, schedule, G, G_simple, cin, db = initialize()
 
-    po = [3, 5, "2021-06-01"]
+    #po = [3, 5, "2021-06-01"]
 
-    production_order_ = production_order.ProductionOrder(po)
-    production_order_.printProductionOrder()
+    #production_order_ = production_order.ProductionOrder(po)
+    #production_order_.printProductionOrder()
+
+    # Atualiza tempo inicial na DB 
+    check_query = f"SELECT reset FROM erp_mes.\"start_time\""
+    reset = db.send_query(check_query)[0][0]
+    if reset == True:
+        print("Resetting start time to current time: ")
+        print(datetime.datetime.now())
+        query = f"UPDATE erp_mes.\"start_time\" SET initial_time = '{datetime.datetime.now()}'"
+        db.send_query(query)
+        #print(db.send_query(f"SELECT * FROM erp_mes.\"start_time\""))
+    else:
+        print("Start time already set...")
 
     while True:
         try:
