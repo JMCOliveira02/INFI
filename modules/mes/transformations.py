@@ -1,4 +1,5 @@
 import networkx as nx
+from utils import bcolors
 
 
 
@@ -6,6 +7,7 @@ import networkx as nx
 
 Ttool = 30000 # tempo de mudança de ferramenta, ms
 Tmain = 9999999999 # tempo de manutenção, ms
+Tmachine = 30000 # tempo de máquina, ms
 Tprevious_busy = 30000 # tempo de máquina anterior, ms
 Tprevious_free = -15000
 
@@ -138,9 +140,10 @@ def generateGraph():
     for edge in edges:
         #           peça1    peça2                                            peso            tempo       ferramenta       id_máquina
         G.add_edge(edge[0], edge[1], key=edge[0]+edge[1]+"M"+str(edge[5]), weight=edge[2], time=edge[3], tool=edge[4], machine_id=edge[5])
-    print("Graph generated!")
+    print(f"\n{bcolors.BOLD}[MES]{bcolors.ENDC}: Graph generated!")
 
     return G
+
 
 
 def generateSimpleGraph():
@@ -160,9 +163,26 @@ def generateSimpleGraph():
     for edge in simple_edges:
         #           peça1    peça2
         G.add_edge(edge[0], edge[1])
-    print("Simple graph generated!")
+    print(f"\n{bcolors.BOLD}[MES]{bcolors.ENDC}: Simple graph generated!")
 
     return G
+
+
+
+def generateGrahps():
+    '''
+    Função que gera o grafo e o grafo simplificado da fábrica
+    args:
+        None
+
+    Returns:
+        G (nx.MultiDiGraph), G_simple (nx.DiGraph): grafo da fábrica, grafo simplificado da fábrica
+    '''
+    G = generateGraph()
+    G_simple = generateSimpleGraph()
+
+    return G, G_simple
+
 
 
 def findSimpleTransformations(G_simple, piece):
