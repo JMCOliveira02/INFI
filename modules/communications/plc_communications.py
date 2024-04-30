@@ -1,5 +1,5 @@
 from opcua import ua, Client
-from utils import *
+from utils import CONSTANTS, bcolors
 import emoji
 
 
@@ -30,12 +30,7 @@ class PLCCommunications:
             Exception ClientAlreadyConnected: caso o cliente já esteja conectado.
             Exception NoConnectionProvided: não haja link para conexão OPC-UA.
         '''
-        if self.client is not None:
-            raise NameError("Client OPC-UA already connected!", name="ClientAlreadyConnected")
-        elif self.opcua_connection is None:
-            raise NameError("No OPC-UA connection provided!", name="NoConnectionProvided")
-        
-        print('Connecting to OPC-UA server...', end=" ", flush=True)
+        print(f'\n{bcolors.BOLD}[Communications]{bcolors.ENDC}: Connecting to OPC-UA server...', end=" ", flush=True)
         self.client = Client(self.opcua_connection)
         self.client.connect()
         print(emoji.emojize('Connected to OPC-UA server! :check_mark_button:'))
@@ -52,7 +47,7 @@ class PLCCommunications:
         return:
             None
         '''
-        print('Disconnecting from OPC-UA server...', end=" ", flush=True)
+        print(f'\n{bcolors.BOLD}[Communications]{bcolors.ENDC}: Disconnecting from OPC-UA server...', end=" ", flush=True)
         self.client.disconnect()
         print(emoji.emojize('Disconnected from OPC-UA server! :check_mark_button:'))
 
@@ -95,12 +90,12 @@ class PLCCommunications:
         return:
             piece: número de peças no armazém superior da máquina.
         '''
-        num_pieces = self.client.get_node(CONSTANTS["TopWh"]["NamespaceIndex"] + "[" + str(type) + "]")
+        num_pieces = self.client.get_node(CONSTANTS["AvailableTopWh"]["NamespaceIndex"] + "[" + str(type) + "]")
         return num_pieces.get_value()
     
 
 
-    def setValueCheck(self, node: Client, value, variant_type):
+    def setValueCheck(self, node, value, variant_type):
         '''
         Função para enviar um valor em um nó e verificar se 
         o valor foi enviar corretamente.
@@ -136,4 +131,26 @@ class PLCCommunications:
         while finish_node.get_value() == False:
             pass
         self.setValueCheck(pieces_node, 0, ua.VariantType.Int16) # reset ao número de peças
+        return
+    
+
+
+    def sendRecipe(self, recipe):
+        '''
+        Função para enviar uma receita para o PLC.
+
+        args:
+            recipe (Recipe): receita a ser enviada.
+        return:
+            None
+        '''
+        machine_id_node = self.client.get_node(CONSTANTS["Recipes"]["NamespaceIndex"] + "[" + str(recipe.recipe_id) + "]" + CONSTANTS["Recipes"]["MachineId"])
+        piece_in_node = self.client.get_node(CONSTANTS["Recipes"]["NamespaceIndex"] + "[" + str(recipe.recipe_id) + CONSTANTS["Recipes"]["PieceIn"])
+        tool_node = self.client.get_node(CONSTANTS["Recipes"]["NamespaceIndex"] + "[" + str(recipe.recipe_id) + CONSTANTS["Recipes"]["Tool"])
+        time_node = self.client.get_node(CONSTANTS["Recipes"]["NamespaceIndex"] + "[" + str(recipe.recipe_id) + CONSTANTS["Recipes"]["Time"])
+
+        self.setValueCheck(machine_id_node, recipe.machine_id, ua.VariantType.Int16)
+        self.setValueCheck(piece_in_node, recipe.piece_in, ua.VariantType.Int16)
+        self.setValueCheck(tool_node, recipe.tool, ua.VariantType.Int16)
+        self.setValueCheck(time_node, recipe.time, ua.VariantType.Int16)
         return
