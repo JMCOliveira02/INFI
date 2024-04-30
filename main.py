@@ -1,50 +1,112 @@
 import sys
 sys.path.insert(0, "..")
-from opcua import ua
-from opcua import Client
-from cin import Cin
-from utils import setValueCheck
-from factory import *
-from database import *
-from orders import *
-from importlib import reload
+import modules.mes.production_order as production_order
+from modules.communications.plc_communications import PLCCommunications
+from modules.mes.transformations import generateGrahps
+from modules.mes.scheduling import Scheduling
+from modules.shopfloor.recipes import Recipe
+from modules.shopfloor.gen_cin import GenCin
+from utils import *
+import traceback
+import time
 
 
 
+def initialize(show_credits=True):
+    
+    if show_credits:
+        printAuthorsCredits()
+  
+    # Inicializa cliente OPC-UA
+    client_connection = CONSTANTS["opcua_connection"]
+    client = PLCCommunications(opcua_connection=client_connection)
+
+    # Conecta ao cliente OPC-UA
+    try:
+        client.clientConnect()
+    except Exception as e:
+        print(traceback.format_exc())
+        sys.exit()
+
+    # Gerar grafo e grafo simples
+    G, G_simple = generateGrahps()
+
+    schedule = Scheduling(client)
+
+    # inicialização de classes
+    cin = GenCin(client=schedule.client)
+
+    return client, schedule, G, G_simple, cin
+
+#         # # Inicializa base de dados
+#         # db = Database()
+#         # # Conecta à base de dados
+#         # db.connect()
+        
+#         # """cin1 = Cin(client, 1)
+#         # cin1.get_nodes()
+#         # cin1.receivePieces(2, 1) """
+
+
+#         # Lê o primeiro pedido da base de dados
+#         # currOrder=parseOrderCSV(db.get_earliest_order())
+#         # Imprime o pedido
+#         # printOrder(currOrder)
+#         #print(f"Current Order: {currOrder.workpiece}")
+
+#         # for i in range(numMachines):
+#         #     transformations[i] = machines[i].findTransformations(currOrder.workpiece)
+
+#         # print(transformations)
+        
+#         #chosenMachineId, chooseTransformation = chooseTransformation(transformations)
+
+#         #machines[chosenMachineId - 1].performTransformation(chooseTransformation, 0)
+
+#         #storePiece(client, 0)
 
 
 
 if __name__ == "__main__":
-    client = Client("opc.tcp://127.0.0.1:4840")
-    machine_types = [M1, M2, M1, M2, M1, M2, M3, M4, M3, M4, M3, M4]
-    machines = [Machine(client, machine_types[i], i+1, 1) for i in range(12)]
-    piece_ordered = 3
-    transformations = {}
 
-    try:
-        client.connect()
-        """cin1 = Cin(client, 1)
-        cin1.get_nodes()
-        cin1.receivePieces(2, 1) """
-        db = Database()
-        db.connect()
-        currOrder=parseOrderCSV(db.get_earliest_order())
-        print(f"Current Order: {currOrder.workpiece}")
+    recipes = [Recipe]*12
 
-        for i in range(12):
-            transformations[i] = machines[i].findTransformations(currOrder.workpiece)
-        
-        chosenMachineId, chosenTransformation = chooseTransformation(transformations)
+    # inicialização
+    client, schedule, G, G_simple, cin = initialize()
 
-        machines[chosenMachineId - 1].performTransformation(chosenTransformation, 0)
+    po = [3, 5, "2021-06-01"]
 
-        storePiece(client, 0)
+    production_order_ = production_order.ProductionOrder(po)
+    production_order_.printProductionOrder()
+
+    while True:
+        try:
+            # para cada peça escalorar transformação e atribuir a receita
+            production_order_.generateRecipes()   
+            client.clientDisconnect()
+            sys.exit()
+
+        except Exception as e:
+            if e.name == "InvalidNumberPieces":
+                print(e.args[0])
+                client.clientDisconnect()
+                sys.exit()
+            else:
+                print(traceback.format_exc())
+                client.clientDisconnect()
+                sys.exit()
 
 
-
-
-
-    except Exception as e:
-        print(e)
-    finally:
-        client.disconnect()
+        # try:
+        #     schedule(G_simple, G, client=client, piece='P5')
+        #     client.clientDisconnect()
+        #     sys.exit()
+            
+        # except Exception as e:
+        #     if e is NameError:
+        #         print("Error:", e)
+        #         pass
+        #     else:
+        #         print(traceback.format_exc())
+        #         client.clientDisconnect()
+        #         sys.exit()
