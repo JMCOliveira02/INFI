@@ -9,8 +9,7 @@ from modules.shopfloor.gen_cin import GenCin
 from utils import *
 from database import *
 import traceback
-import time
-import datetime
+
 
 
 
@@ -85,22 +84,15 @@ if __name__ == "__main__":
     # inicialização
     client, schedule, G, G_simple, cin, db = initialize()
 
-    #po = [3, 5, "2021-06-01"]
+    po = [3, 5, "2021-06-01"]
 
-    #production_order_ = production_order.ProductionOrder(po)
-    #production_order_.printProductionOrder()
+    production_order_ = production_order.ProductionOrder(po)
+    production_order_.printProductionOrder()
 
     # Atualiza tempo inicial na DB 
-    check_query = f"SELECT reset FROM erp_mes.\"start_time\""
-    reset = db.send_query(check_query)[0][0]
-    if reset == True:
-        print("Resetting start time to current time: ")
-        print(datetime.datetime.now())
-        query = f"UPDATE erp_mes.\"start_time\" SET initial_time = '{datetime.datetime.now()}'"
-        db.send_query(query)
-        #print(db.send_query(f"SELECT * FROM erp_mes.\"start_time\""))
-    else:
-        print("Start time already set...")
+    db.update_initial_time()
+            
+            
 
     while True:
         try:

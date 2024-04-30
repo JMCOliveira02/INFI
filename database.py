@@ -1,6 +1,8 @@
 import psycopg2
 from utils import bcolors
 import emoji
+import time
+import datetime
 
 class Database:
     def __init__(self) -> None:
@@ -65,3 +67,25 @@ class Database:
         return self.send_query(
             """SELECT * from "INFI".orders order by duedate limit 1;"""
         )
+    def update_initial_time(self):
+        getReset_query = f"SELECT reset FROM erp_mes.\"start_time\""
+        reset = self.send_query(getReset_query)[0][0]
+
+        # Reset a falso significa que o MES foi abaixo
+        # Reset a verdadeiro significa que a execução atual do MES começa no dia 0, 
+        #   armazenando-se o instante de execução na base de dados como instante 
+        #   inicial
+
+        if reset == False:
+            getTime_query = f"SELECT initial_time FROM erp_mes.\"start_time\""
+            initialTime = reset = self.send_query(getTime_query)[0][0]
+        if reset == True:
+            initialTime = datetime.datetime.now()
+            query = f"UPDATE erp_mes.\"start_time\" SET initial_time = '{initialTime}'"
+            self.send_query(query, None, False)
+        print("Dia 0 : " + str(initialTime))
+        return initialTime
+
+        
+
+
