@@ -86,7 +86,7 @@ class Database:
             FROM erp_mes.production_order po
             LEFT JOIN erp_mes.production_status ps ON po.id = ps.production_order_id
             WHERE ps.id IS NULL
-            ORDER BY po.start_date ASC;
+            ORDER BY po.start_date ASC, po.quantity DESC;
             """
         )
         

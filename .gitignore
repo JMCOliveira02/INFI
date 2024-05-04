@@ -2,3 +2,4 @@
 MES.code-workspace
 __pycache__/
 *.bat
+test.py
