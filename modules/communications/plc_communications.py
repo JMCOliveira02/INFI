@@ -1,5 +1,6 @@
 from opcua import ua, Client
 import emoji
+import time
 
 from utils import CONSTANTS, bcolors
 from modules.shopfloor.recipes import Recipe
@@ -64,6 +65,7 @@ class PLCCommunications:
         return:
             state: estado da máquina.
         '''
+        time.sleep(0.1) # pequeno compasso de espera para o PLC se atualizar
         machine = self.client.get_node(CONSTANTS["MachineState"]["NamespaceIndex"] + "[" + str(machine_id) + "]")
         return machine.get_value()
     
@@ -78,6 +80,7 @@ class PLCCommunications:
         return:
             tool: ferramenta atual da máquina.
         '''
+        time.sleep(0.1) # pequeno compasso de espera para o PLC se atualizar
         tool = self.client.get_node(CONSTANTS["MachineTool"]["NamespaceIndex"] + "[" + str(machine_id) + "]")
         return tool.get_value()
     
@@ -152,6 +155,7 @@ class PLCCommunications:
         time_node = self.client.get_node(CONSTANTS["Recipes"]["NamespaceIndex"] + "[" + str(recipe.recipe_id) + "]" + CONSTANTS["Recipes"]["Time"])
         end_node = self.client.get_node(CONSTANTS["Recipes"]["NamespaceIndex"] + "[" + str(recipe.recipe_id) + "]" + CONSTANTS["Recipes"]["End"])
 
+        time.sleep(0.1) # pequeno compasso de espera para o PLC se atualizar
         self.setValueCheck(machine_id_node, recipe.machine_id, ua.VariantType.Int16)
         self.setValueCheck(piece_in_node, recipe.piece_in, ua.VariantType.Int16)
         self.setValueCheck(tool_node, recipe.tool, ua.VariantType.Int16)
