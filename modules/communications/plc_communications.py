@@ -1,6 +1,10 @@
 from opcua import ua, Client
-from utils import CONSTANTS, bcolors
 import emoji
+import time
+
+from utils import CONSTANTS, bcolors
+from modules.shopfloor.recipes import Recipe
+
 
 
 
@@ -27,10 +31,9 @@ class PLCCommunications:
         args:
             None
         return:
-            Exception ClientAlreadyConnected: caso o cliente já esteja conectado.
-            Exception NoConnectionProvided: não haja link para conexão OPC-UA.
+            None
         '''
-        print(f'\n{bcolors.BOLD}[Communications]{bcolors.ENDC}: Connecting to OPC-UA server...', end=" ", flush=True)
+        print(f'\n{bcolors.BOLD}[Communications]{bcolors.ENDC} Connecting to OPC-UA server...', end=" ", flush=True)
         self.client = Client(self.opcua_connection)
         self.client.connect()
         print(emoji.emojize('Connected to OPC-UA server! :check_mark_button:'))
@@ -47,7 +50,7 @@ class PLCCommunications:
         return:
             None
         '''
-        print(f'\n{bcolors.BOLD}[Communications]{bcolors.ENDC}: Disconnecting from OPC-UA server...', end=" ", flush=True)
+        print(f'\n{bcolors.BOLD}[Communications]{bcolors.ENDC} Disconnecting from OPC-UA server...', end=" ", flush=True)
         self.client.disconnect()
         print(emoji.emojize('Disconnected from OPC-UA server! :check_mark_button:'))
 
@@ -62,6 +65,7 @@ class PLCCommunications:
         return:
             state: estado da máquina.
         '''
+        time.sleep(0.1) # pequeno compasso de espera para o PLC se atualizar
         machine = self.client.get_node(CONSTANTS["MachineState"]["NamespaceIndex"] + "[" + str(machine_id) + "]")
         return machine.get_value()
     
@@ -76,6 +80,7 @@ class PLCCommunications:
         return:
             tool: ferramenta atual da máquina.
         '''
+        time.sleep(0.1) # pequeno compasso de espera para o PLC se atualizar
         tool = self.client.get_node(CONSTANTS["MachineTool"]["NamespaceIndex"] + "[" + str(machine_id) + "]")
         return tool.get_value()
     
@@ -135,7 +140,7 @@ class PLCCommunications:
     
 
 
-    def sendRecipe(self, recipe):
+    def sendRecipe(self, recipe: Recipe):
         '''
         Função para enviar uma receita para o PLC.
 
@@ -145,12 +150,30 @@ class PLCCommunications:
             None
         '''
         machine_id_node = self.client.get_node(CONSTANTS["Recipes"]["NamespaceIndex"] + "[" + str(recipe.recipe_id) + "]" + CONSTANTS["Recipes"]["MachineId"])
-        piece_in_node = self.client.get_node(CONSTANTS["Recipes"]["NamespaceIndex"] + "[" + str(recipe.recipe_id) + CONSTANTS["Recipes"]["PieceIn"])
-        tool_node = self.client.get_node(CONSTANTS["Recipes"]["NamespaceIndex"] + "[" + str(recipe.recipe_id) + CONSTANTS["Recipes"]["Tool"])
-        time_node = self.client.get_node(CONSTANTS["Recipes"]["NamespaceIndex"] + "[" + str(recipe.recipe_id) + CONSTANTS["Recipes"]["Time"])
+        piece_in_node = self.client.get_node(CONSTANTS["Recipes"]["NamespaceIndex"] + "[" + str(recipe.recipe_id) + "]" + CONSTANTS["Recipes"]["PieceIn"])
+        tool_node = self.client.get_node(CONSTANTS["Recipes"]["NamespaceIndex"] + "[" + str(recipe.recipe_id) +"]" + CONSTANTS["Recipes"]["Tool"])
+        time_node = self.client.get_node(CONSTANTS["Recipes"]["NamespaceIndex"] + "[" + str(recipe.recipe_id) + "]" + CONSTANTS["Recipes"]["Time"])
+        end_node = self.client.get_node(CONSTANTS["Recipes"]["NamespaceIndex"] + "[" + str(recipe.recipe_id) + "]" + CONSTANTS["Recipes"]["End"])
 
+        time.sleep(0.1) # pequeno compasso de espera para o PLC se atualizar
         self.setValueCheck(machine_id_node, recipe.machine_id, ua.VariantType.Int16)
         self.setValueCheck(piece_in_node, recipe.piece_in, ua.VariantType.Int16)
         self.setValueCheck(tool_node, recipe.tool, ua.VariantType.Int16)
-        self.setValueCheck(time_node, recipe.time, ua.VariantType.Int16)
+        self.setValueCheck(time_node, recipe.time, ua.VariantType.UInt32)
+        self.setValueCheck(end_node, recipe.end, ua.VariantType.Boolean)
+        return
+    
+
+
+    def getRecipeState(self, recipe: Recipe):
+        '''
+        Função para obter o estado de uma receita.
+
+        args:
+            recipe (Recipe): receita.
+        return:
+            recipe (Recipe): receita atualizada.
+        '''
+        end_node = self.client.get_node(CONSTANTS["Recipes"]["NamespaceIndex"] + "[" + str(recipe.recipe_id) + "]" + CONSTANTS["Recipes"]["End"])
+        recipe.end = end_node.get_value()
         return

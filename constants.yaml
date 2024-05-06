@@ -1,6 +1,9 @@
 # Cliente OPC-UA
 opcua_connection: "opc.tcp://127.0.0.1:4840"
 
+# Número máximo de receitas
+max_recipes: 12
+
 # Gerador de peças
 GenCin:
   NamespaceIndex: "ns=4;s=|var|CODESYS Control Win V3 x64.Application.PLC_PGR_wh_in.Gen_Cin"

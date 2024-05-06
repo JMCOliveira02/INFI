@@ -1,9 +1,9 @@
-import modules.communications.plc_communications as PLCCommunications
-from modules.mes.scheduling import cur_pieces_top_wh, updatePiecesTopWh
 import threading
 import time
-import emoji
-from utils import bcolors
+
+import modules.communications.plc_communications as PLCCommunications
+from modules.mes.scheduling import cur_pieces_top_wh, updatePiecesTopWh
+from utils import bcolors, emoji
 
 class GenCin():
     def __init__(self, client: PLCCommunications):
