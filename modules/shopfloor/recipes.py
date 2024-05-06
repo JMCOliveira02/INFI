@@ -18,6 +18,6 @@ class Recipe():
         #self.in_production = False # indica se a receita está em produção, ou seja, que foi lançada para o shopfloor
         self.sended_date = None
         self.finished_date = None
-        self.current_date = None
-        self.tolerance = 0 # tolerância após verificar estado da receita no PLC tendo passado o tempo de transformação. 
+        # self.current_date = None
+        # self.tolerance = 0 # tolerância após verificar estado da receita no PLC tendo passado o tempo de transformação. 
                            # Se a receita não estiver terminada, é necessário esperar mais tempo, ou seja, tolerência aumenta
