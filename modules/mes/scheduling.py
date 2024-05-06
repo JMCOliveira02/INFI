@@ -273,7 +273,8 @@ class Scheduling():
         recipe.time = edges[0][3]['time']
         recipe.end = False
         recipe.current_transformation = (edges[0][0], edges[0][1])
-        recipe.finished_date = recipe.sended_date + datetime.timedelta(seconds=date_diff_in_Seconds(recipe.finished_date, recipe.sended_date)) + datetime.timedelta(seconds=edges[0][3]["weight"]/1000)
+        end_time_prediction = (recipe.time + (Ttool if recipe.tool != cur_machine_tool[recipe.machine_id] else 0)) / 1000 # tempo de transformação + tempo de mudança de ferramenta se ferramenta a utilziar for diferente da atual
+        recipe.finished_date = recipe.sended_date + datetime.timedelta(seconds=date_diff_in_Seconds(recipe.finished_date, recipe.sended_date)) + datetime.timedelta(seconds=end_time_prediction)
         # recipe.in_production = True
 
         return recipe
