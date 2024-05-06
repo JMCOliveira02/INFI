@@ -1,4 +1,5 @@
 from opcua import ua
+import datetime
 import yaml
 import emoji
 
@@ -36,3 +37,20 @@ def printAuthorsCredits(show_credits=True):
         print(emoji.emojize(":right_arrow:  Thiago Baldassarri Levin - up201900223"))
         print("***************************************************\n")
         print(emoji.emojize(f':rocket:  {bcolors.HEADER}Starting MES{bcolors.ENDC} :rocket:\n'))
+
+
+
+def date_diff_in_Seconds(dt2: datetime.datetime, dt1: datetime.datetime):
+        '''
+        Função que calcula a diferença entre duas datas em segundos
+        
+        args:
+            dt2: datetime -> data final
+            dt1: datetime -> data inicial
+        return:
+            int -> diferença entre as duas datas em segundos
+        '''
+        # Calculate the time difference between dt2 and dt1
+        timedelta = dt2 - dt1
+        # Return the total time difference in seconds
+        return timedelta.days * 24 * 3600 + timedelta.seconds
