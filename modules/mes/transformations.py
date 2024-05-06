@@ -296,25 +296,32 @@ def generateGrahps():
 
 
 
-def findSimpleTransformations(G_simple, target_piece):
+def findSimpleTransformations(G_simple, target_piece, source_piece = None):
     '''
     Função que encontra as transformações possíveis para uma peça e devolve os caminhos e arestas possíveis ordenadas
 
     args:
         G_simple (nx.DiGraph): grafo simplificado da fábrica
-        target_piece (str): peça a transformar
+        target_piece (int): peça a transformar
+        source_piece (int): peça de origem
 
     Returns:
         all_nodes (list), all_edges (list): lista com caminhos possíveis, lista com arestas possíveis
     '''
     all_nodes = []
     all_edges = []
-    for node in G_simple.nodes:
-        if node != target_piece:
-            for path in nx.all_simple_paths(G_simple, source=node, target=target_piece):
-                all_nodes.append(path)
-            for edge in nx.all_simple_edge_paths(G_simple, source=node, target=target_piece):
-                all_edges.append(edge)
+    if source_piece is not None:
+        for path in nx.all_simple_paths(G_simple, source=source_piece, target=target_piece):
+            all_nodes.append(path)
+        for edge in nx.all_simple_edge_paths(G_simple, source=source_piece, target=target_piece):
+            all_edges.append(edge)
+    else:
+        for node in G_simple.nodes:
+            if node != target_piece:
+                for path in nx.all_simple_paths(G_simple, source=node, target=target_piece):
+                    all_nodes.append(path)
+                for edge in nx.all_simple_edge_paths(G_simple, source=node, target=target_piece):
+                    all_edges.append(edge)
 
     # Verificar se é possível fazer a transformação
     if len(all_nodes) == 0 or len(all_edges) == 0:
