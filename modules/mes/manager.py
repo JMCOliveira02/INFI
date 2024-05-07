@@ -59,6 +59,7 @@ class Manager():
         self.stop_orders_thread = False
         self.stop_recipes_thread = False
         self.delivery_orders_thread = False
+        self.lock = threading.Lock()
 
 
 
@@ -92,6 +93,21 @@ class Manager():
 
 
 
+    def printSafely(self, message: str):
+        '''
+        Função que imprime uma mensagem de forma segura
+
+        args:
+            message: str -> mensagem a imprimir
+        return:
+            None
+        '''
+        self.lock.acquire()
+        print(message)
+        self.lock.release()
+
+
+
     def printProductionOrders(self):
         '''
         Função que imprime as ordens de produção
@@ -101,6 +117,7 @@ class Manager():
         return:
             None
         '''
+        self.lock.acquire()
         for order in self.orders:
             print(f'\n{bcolors.BOLD}[MES]{bcolors.ENDC} Summary of production order {bcolors.BOLD+bcolors.UNDERLINE+str(order.order_id)+bcolors.ENDC+bcolors.ENDC}:')
             print(f"\t{bcolors.OKGREEN}->{bcolors.ENDC} Piece type: {order.target_piece}")
@@ -108,6 +125,7 @@ class Manager():
             print(f"\t{bcolors.OKGREEN}->{bcolors.ENDC} Start Date: {order.start_date}")
             print(f"\t{bcolors.OKGREEN}->{bcolors.ENDC} Status: {order.status}")
             print(f"\t{bcolors.OKGREEN}->{bcolors.ENDC} Quantity done: {order.quantity_done}")
+        self.lock.release()
 
 
 
@@ -120,6 +138,7 @@ class Manager():
         return:
             None
         '''
+        self.lock.acquire()
         if(len(self.recipes) == 0):
             print(emoji.emojize(f'\n{bcolors.BOLD+bcolors.WARNING}[MES]{bcolors.ENDC + bcolors.ENDC}:warning:  No recipes associated with production orders'))
             return
@@ -137,7 +156,7 @@ class Manager():
                 print(f"Transformation: ({recipe.current_transformation[0] if recipe.current_transformation is not None else '-':<2},{recipe.current_transformation[1] if recipe.current_transformation is not None else '-':<2})", end="  ")
                 print(f"Sended date: {str(recipe.sended_date) if recipe.sended_date is not None else '-'}", end=" -> ")
                 print(f"Finished date: {str(recipe.finished_date) if recipe.finished_date is not None else '-'}")
-                # print(f"Producing: {str(recipe.in_production):<10}")
+        self.lock.release()
 
     
 
@@ -150,6 +169,7 @@ class Manager():
         return:
             None
         '''
+        self.lock.acquire()
         print(f'\n{bcolors.BOLD}[MES]{bcolors.ENDC} Recipes status (ID):')
         # Determinar o número máximo de elementos em qualquer uma das listas
         active_list = [x for x in self.active_recipes if x is not None]
@@ -176,6 +196,7 @@ class Manager():
                 terminated_index = self.terminated_recipes[i].global_id if i < len(self.terminated_recipes) else ''
 
                 print(f"\t {active_index if active_index is not None else '':<10} {stashed_index if stashed_index is not None else '':<10} {waiting_index if waiting_index is not None else '':<10} {terminated_index if terminated_index is not None else '':<10}")
+        self.lock.release()
 
 
 
@@ -427,24 +448,24 @@ class Manager():
         while not self.stop_orders_thread:
             if status_delivery == True:
                 for order in self.orders:
-                    if order.quantity_done == order.quantity:
+                    if order.quantity_done == order.quantity and order.status == order.PRODUCING:
                         # OLHAR PARA DATA DE ENTREGA
+                        ##### order.status = order.FINISHED
                         order.status = order.SENDING
                         # enviar order
-                        print(emoji.emojize(f'\n{bcolors.BOLD}[MES]{bcolors.ENDC} :delivery_truck:  Sending order {order.order_id}... :delivery_truck:'))
+                        self.printSafely(emoji.emojize(f'\n{bcolors.BOLD}[MES]{bcolors.ENDC} :delivery_truck:  Sending order {bcolors.UNDERLINE}{order.order_id}{bcolors.ENDC}... :delivery_truck:'))
                         self.client.sendDelivery(order)
                         delivery = order
                         status_delivery = False
                         cur_date = datetime.datetime.now()
                         break
             else:
-                if date_diff_in_Seconds(datetime.datetime.now(), cur_date) >= 2000:
+                if date_diff_in_Seconds(datetime.datetime.now(), cur_date) >= 2:
                     # verificar se a ordem foi entregue
                     cur_date = datetime.datetime.now() # atualizar a data
                     status_delivery = self.client.getDeliveryState(delivery)
-                    print(status_delivery)
                     if status_delivery:
-                        print(emoji.emojize(f'\n{bcolors.BOLD+bcolors.OKGREEN}[MES]{bcolors.ENDC + bcolors.ENDC} :grinning_face_with_big_eyes:  Order {delivery.order_id} delivered successfully at {cur_date}! :white_check_mark:'))
+                        self.printSafely(emoji.emojize(f'\n{bcolors.BOLD+bcolors.OKGREEN}[MES]{bcolors.ENDC + bcolors.ENDC} :grinning_face_with_big_eyes:  Order {bcolors.UNDERLINE}{order.order_id}{bcolors.ENDC} delivered successfully at {cur_date}! :check_mark_button:'))
                     
                     '''
                     REMOVER PRODUCTION ORDER?
@@ -455,6 +476,7 @@ class Manager():
     def handle_exit(self, error_message=None):
         self.printAssociatedRecipes()
         self.printRecipesStatus()
+        self.printProductionOrders()
         if error_message:
             print(error_message)
         print(emoji.emojize(f'\n{bcolors.BOLD+bcolors.WARNING}[MES]{bcolors.ENDC + bcolors.ENDC} :warning:  Closing MES... :warning:'))
