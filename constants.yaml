@@ -1,3 +1,6 @@
+# codesys version compatible
+codesys_version: "v2.6.0"
+
 # Cliente OPC-UA
 opcua_connection: "opc.tcp://127.0.0.1:4840"
 
@@ -121,7 +124,7 @@ Recipes:
 
 # Envio de peças (encomenda)
 Delivery:
-  NamespaceIndex: "|var|CODESYS Control Win V3 x64.Application.Variables.delivery"
-  send: ".send"
-  quantity: ".quantity"
-  piece_type: ".piece_type"
+  NamespaceIndex: "ns=4;s=|var|CODESYS Control Win V3 x64.Application.Variables.delivery"
+  Send: ".send"
+  Quantity: ".quantity"
+  PieceType: ".piece_type"
