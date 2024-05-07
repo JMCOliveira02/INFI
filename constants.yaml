@@ -120,9 +120,8 @@ Recipes:
   Tool: ".tool"
 
 # Envio de peças (encomenda)
-WhExtractor:
-  NamespaceIndex: "ns=4;s=|var|CODESYS Control Win V3 x64.Application.PLC_PGR_wh_out.Warehouse_extractor"
-  Number1: "[1]"
-  Number2: "[2]"
-  Number3: "[3]"
-  Number4: "[4]"
+Delivery:
+  NamespaceIndex: "|var|CODESYS Control Win V3 x64.Application.Variables.delivery"
+  send: ".send"
+  quantity: ".quantity"
+  piece_type: ".piece_type"
