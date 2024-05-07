@@ -3,6 +3,7 @@ import emoji
 import time
 
 from utils import CONSTANTS, bcolors
+from modules.mes.production_order import ProductionOrder
 from modules.shopfloor.recipes import Recipe
 
 
@@ -21,6 +22,7 @@ class PLCCommunications:
         '''
         self.opcua_connection = opcua_connection
         self.client = None
+        self.time_to_sleep = 0.1
 
 
 
@@ -65,7 +67,7 @@ class PLCCommunications:
         return:
             state: estado da máquina.
         '''
-        time.sleep(0.1) # pequeno compasso de espera para o PLC se atualizar
+        time.sleep(self.time_to_sleep) # pequeno compasso de espera para o PLC se atualizar
         machine = self.client.get_node(CONSTANTS["MachineState"]["NamespaceIndex"] + "[" + str(machine_id) + "]")
         return machine.get_value()
     
@@ -80,7 +82,7 @@ class PLCCommunications:
         return:
             tool: ferramenta atual da máquina.
         '''
-        time.sleep(0.1) # pequeno compasso de espera para o PLC se atualizar
+        time.sleep(self.time_to_sleep) # pequeno compasso de espera para o PLC se atualizar
         tool = self.client.get_node(CONSTANTS["MachineTool"]["NamespaceIndex"] + "[" + str(machine_id) + "]")
         return tool.get_value()
     
@@ -155,7 +157,7 @@ class PLCCommunications:
         time_node = self.client.get_node(CONSTANTS["Recipes"]["NamespaceIndex"] + "[" + str(recipe.recipe_id) + "]" + CONSTANTS["Recipes"]["Time"])
         end_node = self.client.get_node(CONSTANTS["Recipes"]["NamespaceIndex"] + "[" + str(recipe.recipe_id) + "]" + CONSTANTS["Recipes"]["End"])
 
-        time.sleep(0.1) # pequeno compasso de espera para o PLC se atualizar
+        time.sleep(self.time_to_sleep) # pequeno compasso de espera para o PLC se atualizar
         self.setValueCheck(machine_id_node, recipe.machine_id, ua.VariantType.Int16)
         self.setValueCheck(piece_in_node, recipe.piece_in, ua.VariantType.Int16)
         self.setValueCheck(tool_node, recipe.tool, ua.VariantType.Int16)
@@ -177,3 +179,44 @@ class PLCCommunications:
         end_node = self.client.get_node(CONSTANTS["Recipes"]["NamespaceIndex"] + "[" + str(recipe.recipe_id) + "]" + CONSTANTS["Recipes"]["End"])
         recipe.end = end_node.get_value()
         return
+    
+
+
+    def sendDelivery(self, order: ProductionOrder):
+        '''
+        Função para enviar uma entrega para o PLC.
+
+        args:
+            order (ProductionOrder): id da ordem.
+        return:
+            None
+        '''
+        piece_type_node = self.client.get_node(CONSTANTS["Delivery"]["NamespaceIndex"] + CONSTANTS["Delivery"]["PieceType"])
+        quantity_node = self.client.get_node(CONSTANTS["Delivery"]["NamespaceIndex"] + CONSTANTS["Delivery"]["Quantity"])
+        send_node = self.client.get_node(CONSTANTS["Delivery"]["NamespaceIndex"] + CONSTANTS["Delivery"]["Send"])
+
+        time.sleep(self.time_to_sleep) # pequeno compasso de espera para o PLC se atualizar
+        self.setValueCheck(piece_type_node, order.target_piece, ua.VariantType.Int16)
+        self.setValueCheck(quantity_node, order.quantity, ua.VariantType.Int16)
+        self.setValueCheck(send_node, True, ua.VariantType.Boolean)
+        return
+
+
+
+    def getDeliveryState(self, order: ProductionOrder):
+        '''
+        Função para obter o estado de uma entrega. Se a entrega foi enviada
+        procede a alterar o estado da order para DONE.
+
+        args:
+            order (ProductionOrder): id da ordem.
+        return:
+            True: se a entrega foi enviada.
+            False: se a entrega não foi enviada.
+        '''
+        time.sleep(self.time_to_sleep) # pequeno compasso de espera para o PLC se atualizar
+        delivery_state = self.client.get_node(CONSTANTS["Delivery"]["NamespaceIndex"] + CONSTANTS["Delivery"]["send"])
+        if delivery_state.get_value() == False:
+            order.status = order.DONE
+            return True
+        return False
