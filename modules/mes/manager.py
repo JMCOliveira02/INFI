@@ -58,13 +58,7 @@ class Manager():
         self.stop_cin_thread = False
         self.stop_orders_thread = False
         self.stop_recipes_thread = False
-
-        self.state = 0
-        self.new_state = 0
-        self.got_orders = False
-        self.order_finished = False
-        self.recipes_generated = False
-        self.some_recipe_finished = False
+        self.delivery_orders_thread = False
 
 
 
@@ -112,6 +106,8 @@ class Manager():
             print(f"\t{bcolors.OKGREEN}->{bcolors.ENDC} Piece type: {order.target_piece}")
             print(f"\t{bcolors.OKGREEN}->{bcolors.ENDC} Quantity: {order.quantity}")
             print(f"\t{bcolors.OKGREEN}->{bcolors.ENDC} Start Date: {order.start_date}")
+            print(f"\t{bcolors.OKGREEN}->{bcolors.ENDC} Status: {order.status}")
+            print(f"\t{bcolors.OKGREEN}->{bcolors.ENDC} Quantity done: {order.quantity_done}")
 
 
 
@@ -131,16 +127,16 @@ class Manager():
         for order_id, recipes in recipes_grouped:
             print(f'\n{bcolors.BOLD}[MES]{bcolors.ENDC} Recipes associated with production order {bcolors.BOLD+bcolors.UNDERLINE+str(order_id)+bcolors.ENDC+bcolors.ENDC}:')
             for recipe in recipes:
-                print(f"\t{bcolors.OKGREEN}->{bcolors.ENDC} Recipe ID: {recipe.global_id if recipe.global_id is not None else 'None':<5}", end="")
-                print(f"Machine ID: {recipe.machine_id if recipe.machine_id is not None else 'None':<5}", end="")
-                print(f"Piece In: {recipe.piece_in if recipe.piece_in is not None else 'None':<5}", end="")
-                print(f"Piece Out: {recipe.piece_out if recipe.piece_out is not None else 'None':<5}", end="")
+                print(f"\t{bcolors.OKGREEN}->{bcolors.ENDC} Recipe ID: {recipe.global_id if recipe.global_id is not None else '-':<5}", end="")
+                print(f"Machine ID: {recipe.machine_id if recipe.machine_id is not None else '-':<5}", end="")
+                print(f"Piece In: {recipe.piece_in if recipe.piece_in is not None else '-':<5}", end="")
+                print(f"Piece Out: {recipe.piece_out if recipe.piece_out is not None else '-':<5}", end="")
                 print(f"Target Piece: {recipe.target_piece:<5}", end="")
-                print(f"Tool: {recipe.tool if recipe.tool is not None else 'None':<5}", end="")
-                print(f"Time: {recipe.time if recipe.time is not None else 'None':<10}", end="")
+                print(f"Tool: {recipe.tool if recipe.tool is not None else '-':<5}", end="")
+                print(f"Time: {recipe.time if recipe.time is not None else '-':<10}", end="")
                 print(f"Transformation: ({recipe.current_transformation[0] if recipe.current_transformation is not None else '-':<2},{recipe.current_transformation[1] if recipe.current_transformation is not None else '-':<2})", end="  ")
-                print(f"Sended date: {str(recipe.sended_date) if recipe.sended_date is not None else 'None'}", end=" -> ")
-                print(f"Finished date: {str(recipe.finished_date) if recipe.finished_date is not None else 'None'}")
+                print(f"Sended date: {str(recipe.sended_date) if recipe.sended_date is not None else '-'}", end=" -> ")
+                print(f"Finished date: {str(recipe.finished_date) if recipe.finished_date is not None else '-'}")
                 # print(f"Producing: {str(recipe.in_production):<10}")
 
     
@@ -190,7 +186,7 @@ class Manager():
         return: 
             None
         '''
-        self.orders = [ProductionOrder(1, [4, 2, "2021-06-01 00:00:00"])] # simulação obtenção de ordens de produção
+        self.orders = [ProductionOrder(1, [3, 2, "2021-06-01 00:00:00"])] # simulação obtenção de ordens de produção
         for order in self.orders:
             krecipes = len(self.recipes)
             for i in range(order.quantity):
@@ -221,7 +217,8 @@ class Manager():
 
     def updateRecipesActive(self, operation: str, recipe_id: int, recipe: Recipe):
         '''
-        Função que atualiza as receitas ativas. Atualiza também a receita no argumento.
+        Função que atualiza as receitas ativas. Atualiza também a receita no argumento e 
+        o status da ordem de produção associada à receita para "producing".
 
         args:
             operation: str -> operação a realizar (add, remove). 
@@ -236,6 +233,10 @@ class Manager():
         if operation == "add" and recipe_id is not None and isinstance(recipe, Recipe):
             self.active_recipes[recipe_id] = recipe
             recipe.recipe_id = recipe_id
+            for order in self.orders:
+                if order.order_id == recipe.order_id:
+                    order.status = order.PRODUCING
+                    break
         elif operation == "remove" and recipe_id is not None and isinstance(recipe, Recipe):
             self.active_recipes[recipe_id] = None
             recipe.recipe_id = None
@@ -290,6 +291,10 @@ class Manager():
         '''
         if operation == "add" and isinstance(recipe, Recipe):
             self.terminated_recipes.append(recipe)
+            for order in self.orders:
+                if order.order_id == recipe.order_id:
+                    order.quantity_done += 1
+                    break
         elif operation == "remove" and isinstance(recipe, Recipe):
             self.terminated_recipes.remove(recipe)
 
@@ -404,34 +409,64 @@ class Manager():
                                 sleep_time = 0
             self.generateRecipes()
             self.generateRecipes(False)
-            
-                     
-
-    def updateState(self):
-        if self.state == 0 and self.got_orders:
-            self.new_state = 1
-            self.got_orders = False
-        elif self.state == 1 and self.recipes_generated:
-            self.new_state = 2
         
-        if self.state != self.new_state:
-            self.state = self.new_state
+
+
+    def waitCompleteOrder(self):
+        '''
+        Função que aguarda o fim de uma ordem de produção
+
+        args:
+            None
+        return:
+            None
+        '''
+        delivery = 0 # não está a entregar nenhuma ordem
+        status_delivery = True
+        cur_date = datetime.datetime.now()
+        while not self.stop_orders_thread:
+            if status_delivery == True:
+                for order in self.orders:
+                    if order.quantity_done == order.quantity:
+                        # OLHAR PARA DATA DE ENTREGA
+                        order.status = order.SENDING
+                        # enviar order
+                        print(emoji.emojize(f'\n{bcolors.BOLD}[MES]{bcolors.ENDC} :truck:  Sending order {order.order_id}... :truck:'))
+                        self.client.sendDelivery(order)
+                        delivery = order
+                        status_delivery = False
+                        cur_date = datetime.datetime.now()
+                        break
+            else:
+                if date_diff_in_Seconds(datetime.datetime.now(), cur_date) >= 2000:
+                    # verificar se a ordem foi entregue
+                    cur_date = datetime.datetime.now() # atualizar a data
+                    status_delivery = self.client.getDeliveryState(delivery)
+                    print(status_delivery)
+                    if status_delivery:
+                        print(emoji.emojize(f'\n{bcolors.BOLD+bcolors.OKGREEN}[MES]{bcolors.ENDC + bcolors.ENDC} :grinning_face_with_big_eyes:  Order {delivery.order_id} delivered successfully at {cur_date}! :white_check_mark:'))
+                    
+                    '''
+                    REMOVER PRODUCTION ORDER?
+                    '''
+                    
+
+
+    def handle_exit(self, error_message=None):
+        self.printAssociatedRecipes()
+        self.printRecipesStatus()
+        if error_message:
+            print(error_message)
+        print(emoji.emojize(f'\n{bcolors.BOLD+bcolors.WARNING}[MES]{bcolors.ENDC + bcolors.ENDC} :warning:  Closing MES... :warning:'))
+        self.stop_threads()
 
 
 
-    def stateOperations(self):
-        if self.state == 0:
-            self.getProductionsOrders()
-            self.printProductionOrders()
-            self.printAssociatedRecipes()
-            self.printRecipesStatus()
-            self.got_orders = True
-        elif self.state == 1:
-            self.generateRecipes()
-            self.generateRecipes(False)
-            self.printRecipesStatus()
-            self.recipes_generated = True
-        pass
+    def stop_threads(self):
+        self.stop_cin_thread = True
+        self.stop_orders_thread = True
+        self.stop_recipes_thread = True
+        self.delivery_orders_thread = True
 
 
 
@@ -448,22 +483,18 @@ class Manager():
             self.printProductionOrders()
             self.printAssociatedRecipes()
             self.printRecipesStatus()
-            spin_thread = threading.Thread(target=self.waitSomeTransformation)
-            spin_thread.start()
+            recipes_thread = threading.Thread(target=self.waitSomeTransformation)
+            delivery_thread = threading.Thread(target=self.waitCompleteOrder)
+            for thread in (recipes_thread, delivery_thread):
+                thread.start()
             while True:
                 pass
         except KeyboardInterrupt:
-            self.printAssociatedRecipes()
-            print(emoji.emojize(f'\n{bcolors.BOLD+bcolors.WARNING}[MES]{bcolors.ENDC + bcolors.ENDC} :warning:  Closing MES... :warning:'))
-            self.stop_recipes_thread = True
-            spin_thread.join()
-            self.disconnect()
-            sys.exit()
+            self.handle_exit()
         except Exception as e:
-            self.printAssociatedRecipes()
-            print(emoji.emojize(f'\n{bcolors.BOLD+bcolors.WARNING}[MES]{bcolors.ENDC + bcolors.ENDC} :warning:  Closing MES... :warning:'))
-            self.stop_recipes_thread = True
-            print(traceback.format_exc())
-            spin_thread.join()
+            self.handle_exit(traceback.format_exc())
+        finally:
+            recipes_thread.join()
+            delivery_thread.join()
             self.disconnect()
             sys.exit()
