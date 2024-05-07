@@ -215,7 +215,7 @@ class PLCCommunications:
             False: se a entrega não foi enviada.
         '''
         time.sleep(self.time_to_sleep) # pequeno compasso de espera para o PLC se atualizar
-        delivery_state = self.client.get_node(CONSTANTS["Delivery"]["NamespaceIndex"] + CONSTANTS["Delivery"]["send"])
+        delivery_state = self.client.get_node(CONSTANTS["Delivery"]["NamespaceIndex"] + CONSTANTS["Delivery"]["Send"])
         if delivery_state.get_value() == False:
             order.status = order.DONE
             return True
