@@ -431,7 +431,7 @@ class Manager():
                         # OLHAR PARA DATA DE ENTREGA
                         order.status = order.SENDING
                         # enviar order
-                        print(emoji.emojize(f'\n{bcolors.BOLD}[MES]{bcolors.ENDC} :truck:  Sending order {order.order_id}... :truck:'))
+                        print(emoji.emojize(f'\n{bcolors.BOLD}[MES]{bcolors.ENDC} :delivery_truck:  Sending order {order.order_id}... :delivery_truck:'))
                         self.client.sendDelivery(order)
                         delivery = order
                         status_delivery = False
