@@ -34,6 +34,12 @@ class Manager():
             print(traceback.format_exc())
             sys.exit()
 
+        try:
+            self.verifyCodesysVerison()
+        except Exception as e:
+            self.client.clientDisconnect()
+            sys.exit()
+
         # gerar grafos e grafo simples
         self.G, self.G_simple = generateGrahps()
 
@@ -74,6 +80,26 @@ class Manager():
         '''
         self.client.clientDisconnect()
 
+
+
+    def verifyCodesysVerison(self):
+        '''
+        Função que verifica a versão do Codesys
+
+        args:
+            None
+        
+        return:
+            None
+        '''
+        version = self.client.getCodesysVersion()
+        if version != CONSTANTS["codesys_version_compatible"]:
+            print(emoji.emojize(f'\n{bcolors.BOLD}Codesys version found:{bcolors.ENDC} {bcolors.UNDERLINE + version + bcolors.ENDC} :cross_mark:'))
+            print(emoji.emojize(f':warning:  {bcolors.WARNING}This Codesys version is not compatible with this MES version - {CONSTANTS["mes_version"]}. Make sure you are running Codesys {bcolors.UNDERLINE}{CONSTANTS["codesys_version_compatible"]}{bcolors.ENDC}{bcolors.WARNING} program {bcolors.ENDC} :warning:'))
+            print(f'{bcolors.FAIL}Aborting...{bcolors.ENDC}')
+            raise Exception()
+        else:
+            print(emoji.emojize(f'{bcolors.BOLD}Codesys version found:{bcolors.ENDC} {bcolors.UNDERLINE + version + bcolors.ENDC} :check_mark_button:'))
 
 
     def groupRecipes(self):
@@ -207,7 +233,7 @@ class Manager():
         return: 
             None
         '''
-        self.orders = [ProductionOrder(1, [3, 2, "2021-06-01 00:00:00"])] # simulação obtenção de ordens de produção
+        self.orders = [ProductionOrder(1, [5, 4, "2021-06-01 00:00:00"])] # simulação obtenção de ordens de produção
         for order in self.orders:
             krecipes = len(self.recipes)
             for i in range(order.quantity):

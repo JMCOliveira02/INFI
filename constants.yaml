@@ -1,11 +1,17 @@
+# MES version
+mes_version: "v3.0.0"
+
 # codesys version compatible
-codesys_version: "v2.6.0"
+codesys_version_compatible: "v2.6.1"
 
 # Cliente OPC-UA
 opcua_connection: "opc.tcp://127.0.0.1:4840"
 
 # Número máximo de receitas
 max_recipes: 12
+
+# Receber versão do plc
+codesys_version: "ns=4;s=|var|CODESYS Control Win V3 x64.Application.Variables.version"
 
 # Gerador de peças
 GenCin:

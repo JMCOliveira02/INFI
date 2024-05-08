@@ -58,6 +58,20 @@ class PLCCommunications:
 
 
 
+    def getCodesysVersion(self):
+        '''
+        Função para obter a versão do Codesys.
+
+        args:
+            None
+        return:
+            version: versão do Codesys.
+        '''
+        version = self.client.get_node(CONSTANTS["codesys_version"])
+        return version.get_value()
+
+
+
     def getMachineState(self, machine_id):
         '''
         Função para obter o estado de uma máquina.
