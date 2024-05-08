@@ -99,7 +99,7 @@ class Manager():
             print(f'{bcolors.FAIL}Aborting...{bcolors.ENDC}')
             raise Exception()
         else:
-            print(emoji.emojize(f'{bcolors.BOLD}Codesys version found:{bcolors.ENDC} {bcolors.UNDERLINE + version + bcolors.ENDC} :check_mark_button:'))
+            print(emoji.emojize(f'\n{bcolors.BOLD}Codesys version found:{bcolors.ENDC} {bcolors.UNDERLINE + version + bcolors.ENDC} :check_mark_button:'))
 
 
     def groupRecipes(self):
