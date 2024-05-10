@@ -1,17 +1,17 @@
-from opcua import ua, Client
-import emoji
-import time
+from mes import ua, Client
+from mes import time
 
-from utils import CONSTANTS, bcolors
-from shopfloor.recipes import Recipe
-from mes.production_order import ProductionOrder
-
-
+from mes import emoji
+from mes import CONSTANTS, bcolors
+from mes import Recipe
+from mes import ProductionOrder
 
 
-class PLCCommunications:
 
-    def __init__(self, opcua_connection):
+
+class PLCCommunication:
+
+    def __init__(self, opcua_connection: str):
         '''
         Inicializa a classe PLCCommunications.
 

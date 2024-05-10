@@ -1,6 +1,6 @@
-import networkx as nx
+from mes import nx
 
-from utils import bcolors
+from mes import bcolors
 
 
 

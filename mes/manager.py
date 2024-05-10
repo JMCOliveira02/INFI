@@ -1,16 +1,17 @@
-import sys
-import traceback
-import datetime
-from itertools import groupby
+from mes import sys
+from mes import traceback
+from mes import datetime
+from mes import groupby
 
-from communications.plc_communications import PLCCommunications
-from communications.database import Database
-from mes.production_order import ProductionOrder
-from mes.scheduling import Scheduling
-from mes.transformations import generateGrahps
-from shopfloor.gen_cin import GenCin
-from shopfloor.recipes import Recipe
-from utils import *
+from mes import Database
+from mes import ProductionOrder
+from mes import Scheduling
+from mes import PLCCommunication
+from mes import generateGrahps
+from mes import GenCin
+from mes import Recipe
+from mes import emoji, bcolors, CONSTANTS
+from mes import date_diff_in_Seconds
 
 
 
@@ -23,7 +24,7 @@ class Manager():
         self.cur_n_recipes = 0
 
         # inicialização do cliente OPC-UA
-        self.client = PLCCommunications(client_connection)
+        self.client = PLCCommunication(client_connection)
 
         # Conecta ao cliente OPC-UA
         try:
@@ -63,7 +64,6 @@ class Manager():
         self.stop_orders = False
         self.stop_recipes = False
         self.stop_delivery = False
-        # self.lock = threading.Lock()
 
 
 
@@ -126,9 +126,7 @@ class Manager():
         return:
             None
         '''
-        # self.lock.acquire()
         print(message)
-        # self.lock.release()
 
 
 
@@ -141,7 +139,6 @@ class Manager():
         return:
             None
         '''
-        self.lock.acquire()
         for order in self.orders:
             print(f'\n{bcolors.BOLD}[MES]{bcolors.ENDC} Summary of production order {bcolors.BOLD+bcolors.UNDERLINE+str(order.order_id)+bcolors.ENDC+bcolors.ENDC}:')
             print(f"\t{bcolors.OKGREEN}->{bcolors.ENDC} Piece type: {order.target_piece}")
@@ -149,7 +146,6 @@ class Manager():
             print(f"\t{bcolors.OKGREEN}->{bcolors.ENDC} Start Date: {order.start_date}")
             print(f"\t{bcolors.OKGREEN}->{bcolors.ENDC} Status: {order.status}")
             print(f"\t{bcolors.OKGREEN}->{bcolors.ENDC} Quantity done: {order.quantity_done}")
-        self.lock.release()
 
 
 
@@ -162,7 +158,6 @@ class Manager():
         return:
             None
         '''
-        self.lock.acquire()
         if(len(self.recipes) == 0):
             print(emoji.emojize(f'\n{bcolors.BOLD+bcolors.WARNING}[MES]{bcolors.ENDC + bcolors.ENDC}:warning:  No recipes associated with production orders'))
             return
@@ -180,7 +175,6 @@ class Manager():
                 print(f"Transformation: ({recipe.current_transformation[0] if recipe.current_transformation is not None else '-':<2},{recipe.current_transformation[1] if recipe.current_transformation is not None else '-':<2})", end="  ")
                 print(f"Sended date: {str(recipe.sended_date) if recipe.sended_date is not None else '-'}", end=" -> ")
                 print(f"Finished date: {str(recipe.finished_date) if recipe.finished_date is not None else '-'}")
-        self.lock.release()
 
     
 
@@ -193,7 +187,6 @@ class Manager():
         return:
             None
         '''
-        self.lock.acquire()
         print(f'\n{bcolors.BOLD}[MES]{bcolors.ENDC} Recipes status (ID):')
         # Determinar o número máximo de elementos em qualquer uma das listas
         active_list = [x for x in self.active_recipes if x is not None]
@@ -224,7 +217,6 @@ class Manager():
                 terminated_index = terminated_list[i].global_id if i < len(terminated_list) else ''
 
                 print(f"\t {active_index if active_index is not None else '':<10} {stashed_index if stashed_index is not None else '':<10} {waiting_index if waiting_index is not None else '':<10} {terminated_index if terminated_index is not None else '':<10}")
-        self.lock.release()
 
 
 
@@ -259,12 +251,6 @@ class Manager():
             index = self.active_recipes.index(None)
         except ValueError:
             return None
-        
-        # index_ = None
-        # for index, recipe in enumerate(self.active_recipes):
-        #     if recipe is None:
-        #         index_ = index
-        #         break
         return index 
 
 

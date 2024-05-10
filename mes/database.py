@@ -1,5 +1,4 @@
-import psycopg2
-import os
+from mes import psycopg2
 
 
 class Database:

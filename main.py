@@ -1,8 +1,8 @@
 import sys
 sys.path.insert(0, "..")
 
-from mes.manager import Manager
-from utils import *
+from mes import Manager
+from mes import printAuthorsCredits, CONSTANTS
 
 
 

@@ -1,9 +1,10 @@
-import datetime
+from mes import datetime
 
-from communications.plc_communications import PLCCommunications
-from mes.transformations import *
-from shopfloor.recipes import Recipe
-from utils import date_diff_in_Seconds
+from mes import PLCCommunication
+from mes import Recipe
+from mes import date_diff_in_Seconds
+from mes import nx, Ttool, Tmain, Tmachine, Tprevious_busy, Tprevious_free
+from mes import findSimpleTransformations
 
 
 
@@ -57,7 +58,7 @@ cur_pieces_top_wh = {
 
 
 
-def updateMachinesState(client_opcua: PLCCommunications):
+def updateMachinesState(client_opcua: PLCCommunication):
     '''
     Função para atualizar o estado das máquinas.
     Args:
@@ -71,7 +72,7 @@ def updateMachinesState(client_opcua: PLCCommunications):
 
 
 
-def updateMachineTool(client_opcua: PLCCommunications):
+def updateMachineTool(client_opcua: PLCCommunication):
     '''
     Função para verificar a ferramenta atual da máquina.
     Args:
@@ -85,7 +86,7 @@ def updateMachineTool(client_opcua: PLCCommunications):
 
 
 
-def updatePiecesTopWh(client_opcua: PLCCommunications):
+def updatePiecesTopWh(client_opcua: PLCCommunication):
     '''
     Função para verificar a existência de peças no armazém superior.
     Args:
@@ -100,7 +101,7 @@ def updatePiecesTopWh(client_opcua: PLCCommunications):
 
 
 class Scheduling():
-    def __init__(self, opcua_client: PLCCommunications, G: nx.MultiDiGraph, G_simple: nx.DiGraph):
+    def __init__(self, opcua_client: PLCCommunication, G: nx.MultiDiGraph, G_simple: nx.DiGraph):
         self.client = opcua_client
         self.G = G
         self.G_simple = G_simple
