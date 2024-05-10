@@ -61,11 +61,6 @@ class Manager():
         self.waiting_recipes = [] # receitas que estão à espera de serem geradas. recipe_id = None, piece_in = None
         self.terminated_recipes = [] # receitas que terminaram todas as transformações. recipe_id = None, in_production = false, piece_in = target_piece, end = True
 
-        self.stop_cin = False
-        self.stop_orders = False
-        self.stop_recipes = False
-        self.stop_delivery = False
-
 
 
     def disconnect(self):
@@ -237,7 +232,6 @@ class Manager():
             for i in range(order.quantity):
                 recipe_index = krecipes + i
                 self.recipes.append(Recipe(order.order_id, recipe_index, order.target_piece))
-                # self.waiting_recipes.append(recipe_index)
                 self.updateRecipesWaiting("add", self.recipes[-1])
 
 
@@ -367,11 +361,6 @@ class Manager():
         # Verificar as receitas geradas e que não estão em produção
         if len(recipes_to_check) > 0:
             recipe_to_check = recipes_to_check[0]
-        # for recipe_to_check in recipes_to_check:
-            # # buscar um indíce livre para a receita
-            # free_recipe = self.getActiveRecipeIndex()
-            # if free_recipe is None:  
-            #     return
             status = "stashed" if recipe_to_check in self.stashed_recipes else "waiting"
             recipe_to_check = self.schedule.schedule(recipe_to_check, status, self.active_recipes, self.stashed_recipes)
             if not isinstance(recipe_to_check, int):
@@ -433,7 +422,6 @@ class Manager():
         '''
         current_date = datetime.datetime.now()
         sleep_time = 0
-        # if len([x for x in self.active_recipes if x is not None]) != 0:
         if any(self.active_recipes):
             if date_diff_in_Seconds(datetime.datetime.now(), current_date) >= sleep_time:
                 current_date = datetime.datetime.now() # buscar a hora atual
@@ -503,34 +491,6 @@ class Manager():
                     self.orders.remove(self.completed_orders[0])
                     self.completed_orders.pop(0)
         return
-        # delivery = 0 # não está a entregar nenhuma ordem
-        # status_delivery = True
-        # cur_date = datetime.datetime.now()
-        # while not self.stop_delivery:
-        #     if status_delivery == True:
-        #         for order in self.orders:
-        #             if order.quantity_done == order.quantity and order.status == order.PRODUCING:
-        #                 # OLHAR PARA DATA DE ENTREGA
-        #                 ##### order.status = order.FINISHED
-        #                 order.status = order.SENDING
-        #                 # enviar order
-        #                 self.printSafely(emoji.emojize(f'\n{bcolors.BOLD}[MES]{bcolors.ENDC} :delivery_truck:  Sending order {bcolors.UNDERLINE}{order.order_id}{bcolors.ENDC}... :delivery_truck:'))
-        #                 self.client.sendDelivery(order)
-        #                 delivery = order
-        #                 status_delivery = False
-        #                 cur_date = datetime.datetime.now()
-        #                 break
-        #     else:
-        #         if date_diff_in_Seconds(datetime.datetime.now(), cur_date) >= 2:
-        #             # verificar se a ordem foi entregue
-        #             cur_date = datetime.datetime.now() # atualizar a data
-        #             status_delivery = self.client.getDeliveryState(delivery)
-        #             if status_delivery:
-        #                 self.printSafely(emoji.emojize(f'\n{bcolors.BOLD+bcolors.OKGREEN}[MES]{bcolors.ENDC + bcolors.ENDC} :grinning_face_with_big_eyes:  Order {bcolors.UNDERLINE}{order.order_id}{bcolors.ENDC} delivered successfully at {cur_date}! :check_mark_button:'))
-                    
-        #             '''
-        #             REMOVER PRODUCTION ORDER?
-        #             '''
                     
 
 
@@ -541,14 +501,6 @@ class Manager():
         if error_message:
             print(error_message)
         print(emoji.emojize(f'\n{bcolors.BOLD+bcolors.WARNING}[MES]{bcolors.ENDC + bcolors.ENDC} :warning:  Closing MES... :warning:'))
-
-
-
-    def stop(self):
-        self.stop_cin = True
-        self.stop_orders = True
-        self.stop_recipes = True
-        self.stop_delivery = True
 
 
 
