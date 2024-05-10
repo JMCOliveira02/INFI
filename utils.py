@@ -37,7 +37,7 @@ def printAuthorsCredits(show_credits=True):
         print(emoji.emojize(":right_arrow:  Thiago Baldassarri Levin - up201900223"))
         print(emoji.emojize(":copyright: 2024 A02_B Group"))
         print("***************************************************\n")
-        print(emoji.emojize(f':rocket:  {bcolors.HEADER}Starting MES{bcolors.ENDC} :rocket:  {CONSTANTS["mes_version"]}\n '))
+    print(emoji.emojize(f':rocket:  {bcolors.HEADER}Starting MES{bcolors.ENDC} :rocket:  {CONSTANTS["mes_version"]}\n '))
 
 
 
