@@ -1,8 +1,8 @@
 import datetime
 
-from modules.communications.plc_communications import PLCCommunications
-from modules.mes.transformations import *
-from modules.shopfloor.recipes import Recipe
+from communications.plc_communications import PLCCommunications
+from mes.transformations import *
+from shopfloor.recipes import Recipe
 from utils import date_diff_in_Seconds
 
 

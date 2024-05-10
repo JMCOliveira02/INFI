@@ -2,15 +2,14 @@ import sys
 import traceback
 import datetime
 from itertools import groupby
-import threading
 
-from modules.communications.plc_communications import PLCCommunications
-from modules.communications.database import Database
-from modules.mes.production_order import ProductionOrder
-from modules.mes.scheduling import Scheduling
-from modules.mes.transformations import generateGrahps
-from modules.shopfloor.gen_cin import GenCin
-from modules.shopfloor.recipes import Recipe
+from communications.plc_communications import PLCCommunications
+from communications.database import Database
+from mes.production_order import ProductionOrder
+from mes.scheduling import Scheduling
+from mes.transformations import generateGrahps
+from shopfloor.gen_cin import GenCin
+from shopfloor.recipes import Recipe
 from utils import *
 
 
@@ -64,7 +63,7 @@ class Manager():
         self.stop_orders = False
         self.stop_recipes = False
         self.stop_delivery = False
-        self.lock = threading.Lock()
+        # self.lock = threading.Lock()
 
 
 
@@ -127,9 +126,9 @@ class Manager():
         return:
             None
         '''
-        self.lock.acquire()
+        # self.lock.acquire()
         print(message)
-        self.lock.release()
+        # self.lock.release()
 
 
 

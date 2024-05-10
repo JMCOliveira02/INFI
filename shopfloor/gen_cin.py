@@ -1,8 +1,8 @@
 import threading
 import time
 
-import modules.communications.plc_communications as PLCCommunications
-from modules.mes.scheduling import cur_pieces_top_wh, updatePiecesTopWh
+import communications.plc_communications as PLCCommunications
+from mes.scheduling import cur_pieces_top_wh, updatePiecesTopWh
 from utils import bcolors, emoji
 
 class GenCin():

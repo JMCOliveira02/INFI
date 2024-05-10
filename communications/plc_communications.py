@@ -3,8 +3,8 @@ import emoji
 import time
 
 from utils import CONSTANTS, bcolors
-from modules.mes.production_order import ProductionOrder
-from modules.shopfloor.recipes import Recipe
+from shopfloor.recipes import Recipe
+from mes.production_order import ProductionOrder
 
 
 

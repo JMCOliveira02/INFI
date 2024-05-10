@@ -1,8 +1,7 @@
 import sys
 sys.path.insert(0, "..")
-import traceback
 
-from modules.mes.manager import Manager
+from mes.manager import Manager
 from utils import *
 
 
