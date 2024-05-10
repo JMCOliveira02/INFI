@@ -1,5 +1,5 @@
 # INFI_MES
-MES layer of a high level management and control of a factory floor simulator. Currently this version is working with `Codesys v2.6.0 program`.
+MES layer of a high level management and control of a factory floor simulator. Currently this version is working with `Codesys v2.6.2 program`.
 
 ## Usage
 
