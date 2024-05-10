@@ -111,6 +111,7 @@ class PLCCommunications:
         return:
             piece: número de peças no armazém superior da máquina.
         '''
+        time.sleep(self.time_to_sleep) # pequeno compasso de espera para o PLC se atualizar
         num_pieces = self.client.get_node(CONSTANTS["AvailableTopWh"]["NamespaceIndex"] + "[" + str(type) + "]")
         return num_pieces.get_value()
     
