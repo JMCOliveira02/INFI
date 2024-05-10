@@ -55,6 +55,7 @@ class PLCCommunication:
         print(f'\n{bcolors.BOLD}[Communications]{bcolors.ENDC} Disconnecting from OPC-UA server...', end=" ", flush=True)
         self.client.disconnect()
         print(emoji.emojize('Disconnected from OPC-UA server! :check_mark_button:'))
+        return
 
 
 
