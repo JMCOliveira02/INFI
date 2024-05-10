@@ -50,6 +50,7 @@ class Manager():
 
         # guarda as ordens de produção
         self.orders = []
+        self.completed_orders = []
 
         # guarda as receitas associadas a cada ordem de produção
         self.recipes = []
@@ -139,6 +140,9 @@ class Manager():
         return:
             None
         '''
+        if len(self.order) == 0:
+            print(f'\n{bcolors.BOLD}[MES]{bcolors.ENDC} No production orders available!')
+            return
         for order in self.orders:
             print(f'\n{bcolors.BOLD}[MES]{bcolors.ENDC} Summary of production order {bcolors.BOLD+bcolors.UNDERLINE+str(order.order_id)+bcolors.ENDC+bcolors.ENDC}:')
             print(f"\t{bcolors.OKGREEN}->{bcolors.ENDC} Piece type: {order.target_piece}")
@@ -353,7 +357,7 @@ class Manager():
             None
         '''
         try:
-            self.active_recipes.index(None)
+            free_recipe = self.active_recipes.index(None)
         except ValueError:
             return
         
@@ -361,21 +365,22 @@ class Manager():
         recipes_to_check = self.stashed_recipes + self.waiting_recipes
 
         # Verificar as receitas geradas e que não estão em produção
-        for recipe_to_check in recipes_to_check:
-            # buscar um indíce livre para a receita
-            free_recipe = self.getActiveRecipeIndex()
-            if free_recipe is None:  
-                break
-            else:
-                status = "stashed" if recipe_to_check in self.stashed_recipes else "waiting"
-                recipe_to_check = self.schedule.schedule(recipe_to_check, status, self.active_recipes, self.stashed_recipes)
-                if not isinstance(recipe_to_check, int):
-                    self.updateRecipesStash("remove", recipe_to_check if status == "stashed" else None)
-                    self.updateRecipesWaiting("remove", recipe_to_check if status == "waiting" else None)
-                    self.updateRecipesActive("add", free_recipe, recipe_to_check)
-                    self.client.sendRecipe(self.active_recipes[free_recipe])
-                    self.printAssociatedRecipes()
-                    self.printRecipesStatus()
+        if len(recipes_to_check) > 0:
+            recipe_to_check = recipes_to_check[0]
+        # for recipe_to_check in recipes_to_check:
+            # # buscar um indíce livre para a receita
+            # free_recipe = self.getActiveRecipeIndex()
+            # if free_recipe is None:  
+            #     return
+            status = "stashed" if recipe_to_check in self.stashed_recipes else "waiting"
+            recipe_to_check = self.schedule.schedule(recipe_to_check, status, self.active_recipes, self.stashed_recipes)
+            if not isinstance(recipe_to_check, int):
+                self.updateRecipesStash("remove", recipe_to_check if status == "stashed" else None)
+                self.updateRecipesWaiting("remove", recipe_to_check if status == "waiting" else None)
+                self.updateRecipesActive("add", free_recipe, recipe_to_check)
+                self.client.sendRecipe(self.active_recipes[free_recipe])
+                self.printAssociatedRecipes()
+                self.printRecipesStatus()
                 
 
 
@@ -397,6 +402,23 @@ class Manager():
 
 
 
+    def checkOrderComplete(self, recipe: Recipe):
+        '''
+        Função que verifica se a ordem de produção está completa com base na receita
+
+        args:
+            recipe: Recipe -> receita a verificar
+        return:
+            None
+        '''
+        for order in self.orders:
+            if order.order_id == recipe.order_id:
+                if order.quantity_done == order.quantity:
+                    order.status = order.FINISHED
+                    self.completed_orders.append(order)
+        return
+
+
     def waitSomeTransformation(self):
         '''
         Função que aguarda o fim de alguma transformação. Se não existir nenhuma receita ativa, vai continuamente tentar
@@ -411,88 +433,104 @@ class Manager():
         '''
         current_date = datetime.datetime.now()
         sleep_time = 0
-        while not self.stop_recipes:
-            # if len([x for x in self.active_recipes if x is not None]) != 0:
-            if any(self.active_recipes):
-                if date_diff_in_Seconds(datetime.datetime.now(), current_date) >= sleep_time:
-                    current_date = datetime.datetime.now() # buscar a hora atual
-                    sleep_time = float('inf') # tempo de espera antes de verificar novamente os estados das receitas
-                    for recipe in self.active_recipes:
-                        if recipe is not None: # receita válida
-                            self.client.getRecipeState(recipe) # obter o estado da receita
-                            if recipe.end and recipe.piece_out == recipe.target_piece and recipe.piece_in != recipe.piece_out and recipe.machine_id != -1 and recipe.machine_id != -2: # enviar receita para armazém inferior
-                                recipe.machine_id = -1
-                                recipe.piece_in = recipe.piece_out
-                                recipe.end = False
-                                recipe.finished_date = current_date + datetime.timedelta(seconds=0.5)
+        # if len([x for x in self.active_recipes if x is not None]) != 0:
+        if any(self.active_recipes):
+            if date_diff_in_Seconds(datetime.datetime.now(), current_date) >= sleep_time:
+                current_date = datetime.datetime.now() # buscar a hora atual
+                sleep_time = float('inf') # tempo de espera antes de verificar novamente os estados das receitas
+                for recipe in self.active_recipes:
+                    if recipe is not None: # receita válida
+                        self.client.getRecipeState(recipe) # obter o estado da receita
+                        if recipe.end and recipe.piece_out == recipe.target_piece and recipe.piece_in != recipe.piece_out and recipe.machine_id != -1 and recipe.machine_id != -2: # enviar receita para armazém inferior
+                            recipe.machine_id = -1
+                            recipe.piece_in = recipe.piece_out
+                            recipe.end = False
+                            recipe.finished_date = current_date + datetime.timedelta(seconds=0.5)
+                            self.client.sendRecipe(recipe)
+                        elif recipe.end and recipe.piece_out == recipe.target_piece and recipe.piece_in == recipe.target_piece: # receita terminou todas as transformações
+                            recipe.finished_date = current_date
+                            self.updateRecipesActive("remove", recipe.recipe_id, recipe)
+                            self.updateRecipesTerminated("add", recipe)
+                            self.checkOrderComplete(recipe)
+                            self.printRecipesStatus()
+                        elif recipe.end and recipe.piece_in != recipe.target_piece and recipe.machine_id == -2: # receita terminou transformação intermédia e foi enviada para armazém superior
+                            recipe.finished_date = current_date
+                            self.updateRecipesActive("remove", recipe.recipe_id, recipe)
+                            self.updateRecipesStash("add", recipe)
+                            self.printRecipesStatus()
+                        elif recipe.end and recipe.piece_out != recipe.target_piece: # receita terminou transformação intermédia
+                            recipe.finished_date = current_date
+                            result = self.generateSingleRecipe(recipe)
+                            if result == -1: # não foi possível gerar a receita
+                                recipe.machine_id = -2 # enviar para armazém superior
                                 self.client.sendRecipe(recipe)
-                            elif recipe.end and recipe.piece_out == recipe.target_piece and recipe.piece_in == recipe.target_piece: # receita terminou todas as transformações
-                                recipe.finished_date = current_date
-                                self.updateRecipesActive("remove", recipe.recipe_id, recipe)
-                                self.updateRecipesTerminated("add", recipe)
-                                self.printRecipesStatus()
-                            elif recipe.end and recipe.piece_in != recipe.target_piece and recipe.machine_id == -2: # receita terminou transformação intermédia e foi enviada para armazém superior
-                                recipe.finished_date = current_date
-                                self.updateRecipesActive("remove", recipe.recipe_id, recipe)
-                                self.updateRecipesStash("add", recipe)
-                                self.printRecipesStatus()
-                            elif recipe.end and recipe.piece_out != recipe.target_piece: # receita terminou transformação intermédia
-                                recipe.finished_date = current_date
-                                result = self.generateSingleRecipe(recipe)
-                                if result == -1: # não foi possível gerar a receita
-                                    recipe.machine_id = -2 # enviar para armazém superior
-                                    self.client.sendRecipe(recipe)
-                                else:
-                                    recipe = result
-                                    self.printAssociatedRecipes()
-                                    self.client.sendRecipe(recipe)
-                            # calcular o tempo de espera antes de verificar novamente os estados das receitas
-                            recipe_time = date_diff_in_Seconds(recipe.finished_date, current_date)
-                            if recipe_time <= sleep_time and recipe_time > 0:
-                                sleep_time = recipe_time
                             else:
-                                sleep_time = 0
-            self.generateRecipes()
+                                recipe = result
+                                self.printAssociatedRecipes()
+                                self.client.sendRecipe(recipe)
+                        # calcular o tempo de espera antes de verificar novamente os estados das receitas
+                        recipe_time = date_diff_in_Seconds(recipe.finished_date, current_date)
+                        if recipe_time <= sleep_time and recipe_time > 0:
+                            sleep_time = recipe_time
+                        else:
+                            sleep_time = 0
+        self.generateRecipes()
+        return
         
 
 
     def waitCompleteOrder(self):
         '''
-        Função que aguarda o fim de uma ordem de produção
+        Função que verifica e faz o envio se a ordem de produção estiver completa
 
         args:
             None
         return:
             None
         '''
-        delivery = 0 # não está a entregar nenhuma ordem
-        status_delivery = True
-        cur_date = datetime.datetime.now()
-        while not self.stop_delivery:
-            if status_delivery == True:
-                for order in self.orders:
-                    if order.quantity_done == order.quantity and order.status == order.PRODUCING:
-                        # OLHAR PARA DATA DE ENTREGA
-                        ##### order.status = order.FINISHED
-                        order.status = order.SENDING
-                        # enviar order
-                        self.printSafely(emoji.emojize(f'\n{bcolors.BOLD}[MES]{bcolors.ENDC} :delivery_truck:  Sending order {bcolors.UNDERLINE}{order.order_id}{bcolors.ENDC}... :delivery_truck:'))
-                        self.client.sendDelivery(order)
-                        delivery = order
-                        status_delivery = False
-                        cur_date = datetime.datetime.now()
-                        break
+        if len(self.completed_orders) > 0: # uma ordem de produção terminou
+            ## OLHAR PARA A DATA DE ENTREGA ###########################################################################################################
+            ################################################################################################################
+            if self.completed_orders[0].status != self.completed_orders[0].SENDING:
+                self.completed_orders[0].status = self.completed_orders[0].SENDING
+                # enviar order
+                self.printSafely(emoji.emojize(f'\n{bcolors.BOLD}[MES]{bcolors.ENDC} :delivery_truck:  Sending order {bcolors.UNDERLINE}{self.completed_orders[0].order_id}{bcolors.ENDC}... :delivery_truck:'))
+                self.client.sendDelivery(self.completed_orders[0])
             else:
-                if date_diff_in_Seconds(datetime.datetime.now(), cur_date) >= 2:
-                    # verificar se a ordem foi entregue
-                    cur_date = datetime.datetime.now() # atualizar a data
-                    status_delivery = self.client.getDeliveryState(delivery)
-                    if status_delivery:
-                        self.printSafely(emoji.emojize(f'\n{bcolors.BOLD+bcolors.OKGREEN}[MES]{bcolors.ENDC + bcolors.ENDC} :grinning_face_with_big_eyes:  Order {bcolors.UNDERLINE}{order.order_id}{bcolors.ENDC} delivered successfully at {cur_date}! :check_mark_button:'))
+                status_delivery = self.client.getDeliveryState(self.completed_orders[0])
+                if status_delivery:
+                    self.printSafely(emoji.emojize(f'\n{bcolors.BOLD+bcolors.OKGREEN}[MES]{bcolors.ENDC + bcolors.ENDC} :grinning_face_with_big_eyes:  Order {bcolors.UNDERLINE}{self.completed_orders[0].order_id}{bcolors.ENDC} delivered successfully at {datetime.datetime.now()}! :check_mark_button:'))
+                    self.orders.remove(self.completed_orders[0])
+                    self.completed_orders.pop(0)
+        return
+        # delivery = 0 # não está a entregar nenhuma ordem
+        # status_delivery = True
+        # cur_date = datetime.datetime.now()
+        # while not self.stop_delivery:
+        #     if status_delivery == True:
+        #         for order in self.orders:
+        #             if order.quantity_done == order.quantity and order.status == order.PRODUCING:
+        #                 # OLHAR PARA DATA DE ENTREGA
+        #                 ##### order.status = order.FINISHED
+        #                 order.status = order.SENDING
+        #                 # enviar order
+        #                 self.printSafely(emoji.emojize(f'\n{bcolors.BOLD}[MES]{bcolors.ENDC} :delivery_truck:  Sending order {bcolors.UNDERLINE}{order.order_id}{bcolors.ENDC}... :delivery_truck:'))
+        #                 self.client.sendDelivery(order)
+        #                 delivery = order
+        #                 status_delivery = False
+        #                 cur_date = datetime.datetime.now()
+        #                 break
+        #     else:
+        #         if date_diff_in_Seconds(datetime.datetime.now(), cur_date) >= 2:
+        #             # verificar se a ordem foi entregue
+        #             cur_date = datetime.datetime.now() # atualizar a data
+        #             status_delivery = self.client.getDeliveryState(delivery)
+        #             if status_delivery:
+        #                 self.printSafely(emoji.emojize(f'\n{bcolors.BOLD+bcolors.OKGREEN}[MES]{bcolors.ENDC + bcolors.ENDC} :grinning_face_with_big_eyes:  Order {bcolors.UNDERLINE}{order.order_id}{bcolors.ENDC} delivered successfully at {cur_date}! :check_mark_button:'))
                     
-                    '''
-                    REMOVER PRODUCTION ORDER?
-                    '''
+        #             '''
+        #             REMOVER PRODUCTION ORDER?
+        #             '''
                     
 
 
@@ -518,19 +556,19 @@ class Manager():
         '''
         Função que faz o lançamento das máquinas de estados de cada ordem de produção
         '''
+        self.getProductionsOrders()
+        self.printProductionOrders()
+        self.printAssociatedRecipes()
+        self.printRecipesStatus()
         while True:
             try:
-                self.getProductionsOrders()
-                self.printProductionOrders()
-                self.printAssociatedRecipes()
-                self.printRecipesStatus()
                 self.waitSomeTransformation()
+                self.waitCompleteOrder()
             except KeyboardInterrupt:
-                self.stop()
                 self.handle_exit()
+                self.disconnect()
+                sys.exit()
             except Exception as e:
-                self.stop()
                 self.handle_exit(traceback.format_exc())
-            finally:
                 self.disconnect()
                 sys.exit()
