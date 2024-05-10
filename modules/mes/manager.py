@@ -1,7 +1,6 @@
 import sys
 import traceback
 import datetime
-import time
 from itertools import groupby
 import threading
 
@@ -61,10 +60,10 @@ class Manager():
         self.waiting_recipes = [] # receitas que estão à espera de serem geradas. recipe_id = None, piece_in = None
         self.terminated_recipes = [] # receitas que terminaram todas as transformações. recipe_id = None, in_production = false, piece_in = target_piece, end = True
 
-        self.stop_cin_thread = False
-        self.stop_orders_thread = False
-        self.stop_recipes_thread = False
-        self.delivery_orders_thread = False
+        self.stop_cin = False
+        self.stop_orders = False
+        self.stop_recipes = False
+        self.stop_delivery = False
         self.lock = threading.Lock()
 
 
@@ -199,7 +198,11 @@ class Manager():
         print(f'\n{bcolors.BOLD}[MES]{bcolors.ENDC} Recipes status (ID):')
         # Determinar o número máximo de elementos em qualquer uma das listas
         active_list = [x for x in self.active_recipes if x is not None]
-        max_length = max(len(active_list), len(self.stashed_recipes), len(self.waiting_recipes), len(self.terminated_recipes))
+        active_list.sort(key=lambda x: x.global_id)
+        stashed_list = sorted(self.stashed_recipes, key=lambda x: x.global_id)
+        waiting_list = sorted(self.waiting_recipes, key=lambda x: x.global_id)
+        terminated_list = sorted(self.terminated_recipes, key=lambda x: x.global_id)
+        max_length = max(len(active_list), len(stashed_list), len(waiting_list), len(terminated_list))
 
         # Iterar sobre as listas simultaneamente
         print(f"\t{bcolors.UNDERLINE}Active{bcolors.ENDC}    {bcolors.UNDERLINE}Stashed{bcolors.ENDC}   {bcolors.UNDERLINE}Waiting{bcolors.ENDC}   {bcolors.UNDERLINE}Terminated{bcolors.ENDC}")
@@ -208,18 +211,18 @@ class Manager():
             has_elements = False
             if i < len(active_list) and active_list[i] is not None:
                 has_elements = True
-            if i < len(self.stashed_recipes) and self.stashed_recipes[i] is not None:
+            if i < len(stashed_list) and stashed_list[i] is not None:
                 has_elements = True
-            if i < len(self.waiting_recipes) and self.waiting_recipes[i] is not None:
+            if i < len(waiting_list) and waiting_list[i] is not None:
                 has_elements = True
-            if i < len(self.terminated_recipes) and self.terminated_recipes[i] is not None:
+            if i < len(terminated_list) and terminated_list[i] is not None:
                 has_elements = True
             # Se houver elementos válidos, imprima esta linha
             if has_elements:
                 active_index = active_list[i].global_id if i < len(active_list) and active_list[i] is not None else ''
-                stashed_index = self.stashed_recipes[i].global_id if i < len(self.stashed_recipes) else ''
-                waiting_index = self.waiting_recipes[i].global_id if i < len(self.waiting_recipes) else ''
-                terminated_index = self.terminated_recipes[i].global_id if i < len(self.terminated_recipes) else ''
+                stashed_index = stashed_list[i].global_id if i < len(stashed_list) else ''
+                waiting_index = waiting_list[i].global_id if i < len(waiting_list) else ''
+                terminated_index = terminated_list[i].global_id if i < len(terminated_list) else ''
 
                 print(f"\t {active_index if active_index is not None else '':<10} {stashed_index if stashed_index is not None else '':<10} {waiting_index if waiting_index is not None else '':<10} {terminated_index if terminated_index is not None else '':<10}")
         self.lock.release()
@@ -233,7 +236,7 @@ class Manager():
         return: 
             None
         '''
-        self.orders = [ProductionOrder(1, [5, 4, "2021-06-01 00:00:00"])] # simulação obtenção de ordens de produção
+        self.orders = [ProductionOrder(1, [7, 4, "2021-06-01 00:00:00"]), ProductionOrder(2, [6, 3, "2021-06-01 00:00:00"])] # simulação obtenção de ordens de produção
         for order in self.orders:
             krecipes = len(self.recipes)
             for i in range(order.quantity):
@@ -253,12 +256,17 @@ class Manager():
         return:
             int -> índice da receita ativa a None. None se não existir nenhuma receita ativa a None
         '''
-        index_ = None
-        for index, recipe in enumerate(self.active_recipes):
-            if recipe is None:
-                index_ = index
-                break
-        return index_ 
+        try:
+            index = self.active_recipes.index(None)
+        except ValueError:
+            return None
+        
+        # index_ = None
+        # for index, recipe in enumerate(self.active_recipes):
+        #     if recipe is None:
+        #         index_ = index
+        #         break
+        return index 
 
 
 
@@ -347,7 +355,7 @@ class Manager():
 
 
     
-    def generateRecipes(self, is_even: bool = True):
+    def generateRecipes(self):
         '''
         Função que gera as receitas para as máquinas pares ou ímpares. 
         Ordem de prioridade:
@@ -359,7 +367,9 @@ class Manager():
         return:
             None
         '''
-        if len([x for x in self.active_recipes if x is not None]) == self.max_n_recipes:
+        try:
+            self.active_recipes.index(None)
+        except ValueError:
             return
         
         # Definir a lista de receitas a serem verificadas
@@ -373,7 +383,7 @@ class Manager():
                 break
             else:
                 status = "stashed" if recipe_to_check in self.stashed_recipes else "waiting"
-                recipe_to_check = self.schedule.schedule(recipe_to_check, status, is_even)
+                recipe_to_check = self.schedule.schedule(recipe_to_check, status, self.active_recipes, self.stashed_recipes)
                 if not isinstance(recipe_to_check, int):
                     self.updateRecipesStash("remove", recipe_to_check if status == "stashed" else None)
                     self.updateRecipesWaiting("remove", recipe_to_check if status == "waiting" else None)
@@ -395,11 +405,9 @@ class Manager():
             recipe: Recipe -> receita gerada
             -1: Não foi possível gerar a receita
         '''
-        schedule = self.schedule.schedule(recipe, "active", True) # tentar primeiro máquinas pares
+        schedule = self.schedule.schedule(recipe, "active", self.active_recipes, self.stashed_recipes) # tentar primeiro máquinas pares
         if isinstance(schedule, int):
-            schedule = self.schedule.schedule(recipe, "active", False) # tentar máquinas impares
-            if isinstance(schedule, int):
-                return -1
+            return -1
         return schedule
 
 
@@ -418,7 +426,7 @@ class Manager():
         '''
         current_date = datetime.datetime.now()
         sleep_time = 0
-        while not self.stop_recipes_thread:
+        while not self.stop_recipes:
             # if len([x for x in self.active_recipes if x is not None]) != 0:
             if any(self.active_recipes):
                 if date_diff_in_Seconds(datetime.datetime.now(), current_date) >= sleep_time:
@@ -427,7 +435,7 @@ class Manager():
                     for recipe in self.active_recipes:
                         if recipe is not None: # receita válida
                             self.client.getRecipeState(recipe) # obter o estado da receita
-                            if recipe.end and recipe.piece_out == recipe.target_piece and recipe.piece_in != recipe.piece_out: # enviar receita para armazém inferior
+                            if recipe.end and recipe.piece_out == recipe.target_piece and recipe.piece_in != recipe.piece_out and recipe.machine_id != -1 and recipe.machine_id != -2: # enviar receita para armazém inferior
                                 recipe.machine_id = -1
                                 recipe.piece_in = recipe.piece_out
                                 recipe.end = False
@@ -438,12 +446,17 @@ class Manager():
                                 self.updateRecipesActive("remove", recipe.recipe_id, recipe)
                                 self.updateRecipesTerminated("add", recipe)
                                 self.printRecipesStatus()
+                            elif recipe.end and recipe.piece_in != recipe.target_piece and recipe.machine_id == -2: # receita terminou transformação intermédia e foi enviada para armazém superior
+                                recipe.finished_date = current_date
+                                self.updateRecipesActive("remove", recipe.recipe_id, recipe)
+                                self.updateRecipesStash("add", recipe)
+                                self.printRecipesStatus()
                             elif recipe.end and recipe.piece_out != recipe.target_piece: # receita terminou transformação intermédia
                                 recipe.finished_date = current_date
                                 result = self.generateSingleRecipe(recipe)
                                 if result == -1: # não foi possível gerar a receita
-                                    self.updateRecipesActive("remove", recipe.recipe_id, recipe)
-                                    self.updateRecipesStash("add", recipe)
+                                    recipe.machine_id = -2 # enviar para armazém superior
+                                    self.client.sendRecipe(recipe)
                                 else:
                                     recipe = result
                                     self.printAssociatedRecipes()
@@ -455,7 +468,6 @@ class Manager():
                             else:
                                 sleep_time = 0
             self.generateRecipes()
-            self.generateRecipes(False)
         
 
 
@@ -471,7 +483,7 @@ class Manager():
         delivery = 0 # não está a entregar nenhuma ordem
         status_delivery = True
         cur_date = datetime.datetime.now()
-        while not self.stop_orders_thread:
+        while not self.stop_delivery:
             if status_delivery == True:
                 for order in self.orders:
                     if order.quantity_done == order.quantity and order.status == order.PRODUCING:
@@ -506,15 +518,14 @@ class Manager():
         if error_message:
             print(error_message)
         print(emoji.emojize(f'\n{bcolors.BOLD+bcolors.WARNING}[MES]{bcolors.ENDC + bcolors.ENDC} :warning:  Closing MES... :warning:'))
-        self.stop_threads()
 
 
 
-    def stop_threads(self):
-        self.stop_cin_thread = True
-        self.stop_orders_thread = True
-        self.stop_recipes_thread = True
-        self.delivery_orders_thread = True
+    def stop(self):
+        self.stop_cin = True
+        self.stop_orders = True
+        self.stop_recipes = True
+        self.stop_delivery = True
 
 
 
@@ -522,27 +533,19 @@ class Manager():
         '''
         Função que faz o lançamento das máquinas de estados de cada ordem de produção
         '''
-        try:
-            # lançar thread para cin
-            # lançar thread para ordens de produção
-            # lançar thread para receitas
-            # lançar thread para excluir ordens de produção
-            self.getProductionsOrders()
-            self.printProductionOrders()
-            self.printAssociatedRecipes()
-            self.printRecipesStatus()
-            recipes_thread = threading.Thread(target=self.waitSomeTransformation)
-            delivery_thread = threading.Thread(target=self.waitCompleteOrder)
-            for thread in (recipes_thread, delivery_thread):
-                thread.start()
-            while True:
-                pass
-        except KeyboardInterrupt:
-            self.handle_exit()
-        except Exception as e:
-            self.handle_exit(traceback.format_exc())
-        finally:
-            recipes_thread.join()
-            delivery_thread.join()
-            self.disconnect()
-            sys.exit()
+        while True:
+            try:
+                self.getProductionsOrders()
+                self.printProductionOrders()
+                self.printAssociatedRecipes()
+                self.printRecipesStatus()
+                self.waitSomeTransformation()
+            except KeyboardInterrupt:
+                self.stop()
+                self.handle_exit()
+            except Exception as e:
+                self.stop()
+                self.handle_exit(traceback.format_exc())
+            finally:
+                self.disconnect()
+                sys.exit()
