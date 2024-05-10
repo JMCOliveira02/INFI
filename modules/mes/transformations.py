@@ -8,7 +8,7 @@ from utils import bcolors
 
 Ttool = 30000 # tempo de mudança de ferramenta, ms
 Tmain = 9999999999 # tempo de manutenção, ms
-Tmachine = 30000 # tempo de máquina, ms
+Tmachine = 40000 # tempo de máquina, ms
 Tprevious_busy = 30000 # tempo de máquina anterior, ms
 Tprevious_free = -15000
 
