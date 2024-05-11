@@ -4,6 +4,7 @@ from mes import datetime
 from mes import groupby
 
 from mes import Database
+from mes import Clock
 from mes import ProductionOrder
 from mes import Scheduling
 from mes import PLCCommunication
@@ -39,14 +40,18 @@ class Manager():
             self.client.clientDisconnect()
             sys.exit()
 
+        # inicialização da base de dados
+        self.database = Database()
+
         # gerar grafos e grafo simples
         self.G, self.G_simple = generateGrahps()
 
         self.cin = GenCin(self.client)
 
         self.schedule = Scheduling(self.client, self.G, self.G_simple)
-        
-        # self.database = database
+
+        # Data
+        self.clock = Clock()
 
         # guarda as ordens de produção
         self.orders = []
@@ -57,7 +62,7 @@ class Manager():
 
         # guarda as receitas
         self.active_recipes = [None] * self.max_n_recipes # receitas que estão em produção e a circular pelo shopfloor. recipe_id != None (entre 0 e max_n_recipes-1)
-        self.stashed_recipes = [] # receitas que foram geradas, mas por motivo de otimização encontram-se paradas nos armazéns. recipe_id = None, in_production = false, piece_in != None, end = True
+        self.stashed_recipes = [] # receitas que foram geraestás das, mas por motivo de otimização encontram-se paradas nos armazéns. recipe_id = None, in_production = false, piece_in != None, end = True
         self.waiting_recipes = [] # receitas que estão à espera de serem geradas. recipe_id = None, piece_in = None
         self.terminated_recipes = [] # receitas que terminaram todas as transformações. recipe_id = None, in_production = false, piece_in = target_piece, end = True
 
@@ -135,7 +140,7 @@ class Manager():
         return:
             None
         '''
-        if len(self.order) == 0:
+        if len(self.orders) == 0:
             print(f'\n{bcolors.BOLD}[MES]{bcolors.ENDC} No production orders available!')
             return
         for order in self.orders:
@@ -219,6 +224,27 @@ class Manager():
 
 
 
+    def parseProductionOrder(self, production_order: list):
+        '''
+        Função para fazer o parse da production order recebido do erp.
+
+        args:
+            production_order (list): lista recebida do erp
+
+        returns:
+            parsed_production_order (list): lista de produção com parse
+        '''
+        parsed_production_order = []
+        parsed_production_order.append(production_order[0]) # order id
+        parsed_production_order.append(production_order[1]) # client id
+        # tipo de peça
+        parsed_production_order.append(int(production_order[2][1:]))
+        parsed_production_order.append(production_order[3]) # quantidade
+        parsed_production_order.append(production_order[4]) # data de inicio
+        return parsed_production_order
+    
+
+
     def getProductionsOrders(self):
         '''
         Função que obtém todas as ordens de produção ordenadas por quantidade de peças a produzir
@@ -226,13 +252,21 @@ class Manager():
         return: 
             None
         '''
-        self.orders = [ProductionOrder(1, [7, 4, "2021-06-01 00:00:00"]), ProductionOrder(2, [6, 3, "2021-06-01 00:00:00"])] # simulação obtenção de ordens de produção
+        production_orders = self.database.get_production_order()
+        for production_order in production_orders:
+            production_order = self.parseProductionOrder(production_order)
+            self.orders.append(ProductionOrder(production_order))
+
+        # self.orders = [ProductionOrder(1, [7, 4, "2021-06-01 00:00:00"]), ProductionOrder(2, [6, 3, "2021-06-01 00:00:00"])] # simulação obtenção de ordens de produção
         for order in self.orders:
             krecipes = len(self.recipes)
             for i in range(order.quantity):
                 recipe_index = krecipes + i
                 self.recipes.append(Recipe(order.order_id, recipe_index, order.target_piece))
                 self.updateRecipesWaiting("add", self.recipes[-1])
+        self.printProductionOrders()
+        self.printAssociatedRecipes()
+        self.printRecipesStatus()
 
 
 
@@ -488,10 +522,18 @@ class Manager():
                 status_delivery = self.client.getDeliveryState(self.completed_orders[0])
                 if status_delivery:
                     self.printSafely(emoji.emojize(f'\n{bcolors.BOLD+bcolors.OKGREEN}[MES]{bcolors.ENDC + bcolors.ENDC} :grinning_face_with_big_eyes:  Order {bcolors.UNDERLINE}{self.completed_orders[0].order_id}{bcolors.ENDC} delivered successfully at {datetime.datetime.now()}! :check_mark_button:'))
+                    # remover receitas associadas a esta ordem de produção
+                    for recipe in self.recipes:
+                        if recipe.order_id == self.completed_orders[0].order_id:
+                            self.updateRecipesTerminated("remove", recipe)
+                            self.recipes.remove(recipe)
+                    # remover ordem de produção
                     self.orders.remove(self.completed_orders[0])
+                    # remover ordem de produção da lista de ordens completas
                     self.completed_orders.pop(0)
+                    self.printProductionOrders()
         return
-                    
+          
 
 
     def handle_exit(self, error_message=None):
@@ -509,18 +551,21 @@ class Manager():
         Função que faz o lançamento das máquinas de estados de cada ordem de produção
         '''
         self.getProductionsOrders()
-        self.printProductionOrders()
-        self.printAssociatedRecipes()
-        self.printRecipesStatus()
         while True:
             try:
-                self.waitSomeTransformation()
-                self.waitCompleteOrder()
+                self.clock.update_time()
+                print(self.clock.get_time())
+                # self.waitSomeTransformation()
+                # self.waitCompleteOrder()
+                # print(self.database.get_production_order())
             except KeyboardInterrupt:
                 self.handle_exit()
-                self.disconnect()
+                self.client.clientDisconnect()
                 sys.exit()
             except Exception as e:
                 self.handle_exit(traceback.format_exc())
-                self.disconnect()
+                self.client.clientDisconnect()
                 sys.exit()
+            # finally:
+            #     self.client.clientDisconnect()
+            #     break
