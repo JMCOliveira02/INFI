@@ -2,12 +2,12 @@
 
 
 class ProductionOrder():
-    def __init__(self, order_id: int, production_order: list[tuple[int, int, str]]):
+    def __init__(self, production_order: list[tuple[int, int, int, int, int]]):
         '''
         Construtor da classe ProductionOrder
         Args:
             order_id (int): id da ordem de produção
-            production_order (list[tuple[int, int, str]]): lista com a ordem de produção. Cada elemento é uma tupla com a peça a produzir, a quantidade e a data de início
+            production_order (list[tuple[int, int, int, int, int]]): lista com a ordem de produção. Cada elemento é uma tupla com a order id, client id, peça a produzir, a quantidade e a data de início
         '''
         # atributos da ordem de produção
         self.PENDING = "pending"
@@ -15,10 +15,11 @@ class ProductionOrder():
         self.FINISHED = "finished"
         self.SENDING = "sending"
         self.DONE = "done"
-        self.order_id = order_id
-        self.target_piece = production_order[0]
-        self.quantity = production_order[1]
-        self.start_date = production_order[2]
+        self.order_id = production_order[0]
+        self.client_id = production_order[1]
+        self.target_piece = production_order[2]
+        self.quantity = production_order[3]
+        self.start_date = production_order[4]
         self.quantity_done = 0 # assim que uma peça for concluída, incrementa-se este valor
         self.status = self.PENDING
         '''
