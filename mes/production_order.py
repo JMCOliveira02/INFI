@@ -13,8 +13,6 @@ class ProductionOrder():
         self.PENDING = "pending"
         self.PRODUCING = "producing"
         self.FINISHED = "finished"
-        self.SENDING = "sending"
-        self.DONE = "done"
         self.order_id = production_order[0]
         self.client_id = production_order[1]
         self.target_piece = production_order[2]
@@ -26,6 +24,5 @@ class ProductionOrder():
         status possíveis:
         - pending: ordem de produção ainda não foi iniciada
         - producing: ordem de produção está sendo produzida
-        - sending: ordem de produção está sendo enviada para cliente
-        - done: ordem de produção foi concluída
+        - finished: ordem de produção foi concluída. Enviar status para base de dados e eliminar ordem de produção.
         '''
