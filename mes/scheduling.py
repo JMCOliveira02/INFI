@@ -1,6 +1,5 @@
-from mes import datetime
-
 from mes import PLCCommunication
+from mes import Clock
 from mes import Recipe
 from mes import date_diff_in_Seconds
 from mes import nx, Ttool, Tmain, Tmachine, Tprevious_busy, Tprevious_free
@@ -108,7 +107,7 @@ class Scheduling():
 
 
 
-    def __calculateEdgesWeights(self, transform: list, active_recipes: list):
+    def __calculateEdgesWeights(self, clock: Clock, transform: list, active_recipes: list):
         '''
         Função para calcular o peso de todas as arestas com base no tempo de transformação, 
         tempo de mudança de ferramenta (se necessário), tempo de manutenção (se necessário),
@@ -169,7 +168,7 @@ class Scheduling():
                                 continue
                             if recipe.machine_id % 2 != 0:
                                 odd_recipes.append(recipe)
-                        odd_recipes.sort(key=lambda x: date_diff_in_Seconds(x.finished_date, datetime.datetime.now())) 
+                        odd_recipes.sort(key=lambda x: clock.diff_time(x.finished_date)) 
                         # encontrar índice da receita que possui a máquina ímpar
                         m = next((i) for i, recipe in enumerate(odd_recipes) if (edge[3]['machine_id'] - 1) == recipe.machine_id)
                         previous_machine_time = Tprevious_busy - 2000 * m
@@ -229,13 +228,14 @@ class Scheduling():
 
 
 
-    def schedule(self, recipe: Recipe, status: str, active_recipes: list, stashed_recipes: list):
+    def schedule(self, clock: Clock, recipe: Recipe, status: str, active_recipes: list, stashed_recipes: list):
         '''
         Função para agendar a produção de peças. Se recipe=None, 
         procura o caminho mais curto para a peça a produzir a partir do armazém.
         Caso contrário, utiliza a receita para encontrar o caminho mais 
         curto a partir da peça presente na receita.
         Args:
+            clock (Clock): objeto relógio
             recipe (Recipe): receita a enviar para o PLC. Default: None
             status (str): estado da receita ("active", "stashed", "waiting")
             active_recipes (list): lista de receitas ativas
@@ -253,8 +253,8 @@ class Scheduling():
                 nodes, edges = findSimpleTransformations(self.G_simple, recipe.target_piece) # não é necessário calcular a transofrmação para receitas stashed
                 if len(nodes) == 0 or len(edges) == 0:
                     return -2
-                recipe.sended_date = datetime.datetime.now()
-                recipe.finished_date = datetime.datetime.now()
+                recipe.sended_date = clock.get_time()
+                recipe.finished_date = clock.get_time()
                 transform = self.__validatePath(nodes, stashed_recipes)
                 if transform == -1:
                     return -3
@@ -296,7 +296,7 @@ class Scheduling():
         recipe.time = edge_[3]['time']
         recipe.end = False
         recipe.current_transformation = (edge_[0], edge_[1])
-        end_time_prediction = (recipe.time + (Ttool if recipe.tool != cur_machine_tool[recipe.machine_id] else 0)) / 1000 # tempo de transformação + tempo de mudança de ferramenta se ferramenta a utilziar for diferente da atual
-        recipe.finished_date = recipe.sended_date + datetime.timedelta(seconds=date_diff_in_Seconds(recipe.finished_date, recipe.sended_date)) + datetime.timedelta(seconds=end_time_prediction)
+        end_time_prediction = (recipe.time + (Ttool if recipe.tool != cur_machine_tool[recipe.machine_id] else 0)) / 1000 # tempo de transformação + tempo de mudança de ferramenta se ferramenta a utilizar for diferente da atual
+        recipe.finished_date = clock.add_seconds(recipe.sended_date, (clock.diff_time(recipe.finished_date, recipe.sended_date) + end_time_prediction))
 
         return recipe
