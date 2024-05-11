@@ -9,6 +9,8 @@ from mes import emoji, bcolors
 
 class Database:
     def __init__(self) -> None:
+        self.self.conn = None
+        self.connect()
         pass
 
 
@@ -18,24 +20,17 @@ class Database:
         '''
         print(f'\n{bcolors.BOLD}[Communications]{bcolors.ENDC} Connecting to Database...', end=" ", flush=True)
         try:
-            conn = psycopg2.connect(
-                host="db.fe.up.pt",
-                port="5432",
-                user="infind202407",
-                password="infinito",
-                database="infind202407"
-                #user=os.getenv('db_user'),
-                #password=os.getenv('db_password'),
-                #database=os.getenv('db_name')
-            )
-            # print(emoji.emojize('Connected to Database! :check_mark_button:'))
-            print('Connected to Database!')
+            self.conn = psycopg2.connect(
+                            host="db.fe.up.pt",
+                            port="5432",
+                            user="infind202407",
+                            password="infinito",
+                            database="infind202407"
+                        )
+            print(emoji.emojize('Connected to Database! :check_mark_button:'))
         except psycopg2.Error as e:
-            print(f'\n{bcolors.BOLD}{bcolors.WARNING}[Communications]{bcolors.ENDC}{bcolors.ENDC} Error connecting to Database', end=" ", flush=True)
-            print(e)
-        
-        return conn
-    
+            print(emoji.emojize(f'\n{bcolors.BOLD}{bcolors.FAIL}[Communications]{bcolors.ENDC}{bcolors.ENDC} Error connecting to Database!  :cross_mark:'))
+
 
 
     def disconnect(self):
@@ -43,38 +38,51 @@ class Database:
         disconnect from data base
         '''
         print(f'\n{bcolors.BOLD}[Communications]{bcolors.ENDC} Disconnecting from Database...', end=" ", flush=True)
-        
+        try:
+            self.conn.close()
+        except psycopg2.Error as e:
+            print(emoji.emojize(f'\n{bcolors.BOLD}{bcolors.FAIL}[Communications]{bcolors.ENDC}{bcolors.ENDC} Error disconnecting from Database!  :cross_mark:'))
+            return
         print(emoji.emojize('Disconnected from Database! :check_mark_button:'))
         return
     
 
-    def send_query(self, query, parameters=None, fetch=True):
-        try:
-            conn = self.connect()
-            cur = conn.cursor()
 
-            if parameters is None:
-                cur.execute(query)
-            else:
-                cur.execute(query, parameters)
+    def send_query(self, query, parameters=None, fetch=True):
+        '''
+        Execute a SQL query on the database.
+        
+        args:
+            query - The SQL query to execute.
+            parameters - Optional parameters for the query.
+            fetch - Whether to fetch the results or not (default True).
+        
+        return:
+            The result of the query if fetch is True, otherwise None.
+        '''
+        try:
+            cur = self.conn.cursor()
+
+            # if parameters is None:
+            #     cur.execute(query)
+            # else:
+            #     cur.execute(query, parameters)
 
             if fetch:
                 ans = cur.fetchall()
             else:
                 ans = None
 
-            conn.commit()
+            self.conn.commit()
         except psycopg2.Error as e:
             print(f'\n{bcolors.BOLD}[Communications]{bcolors.ENDC} Error executing query: ', end=" ", flush=True)
             print(e)
             # Rollback any changes made during the transaction
-            conn.rollback()
+            self.conn.rollback()
             ans = None
         finally:
-            # Close cursor and connection
+            # Close cursor (not necessary to close the connection)
             cur.close()
-            conn.close()
-            print(f'\n{bcolors.BOLD}[Communications]{bcolors.ENDC} Connection to database closed!')
 
         return ans
     
@@ -154,3 +162,41 @@ class Database:
             self.send_query(query, None, False)
         print(f'\n{bcolors.BOLD}[MES]{bcolors.ENDC} Day 0 : {str(initialTime)}')
         return initialTime
+    
+
+
+    def get_production_order_by_id(self, id):
+        """
+        Retrieves production orders from the database with an ID greater than or equal to the specified ID.
+
+        Args:
+            id (int): The ID to search for. Production orders with IDs greater than or equal to this value will be retrieved.
+
+        Returns:
+            list or None: A list of production orders matching the criteria, or None if no matching orders are found.
+        """   
+        query= """ SELECT po.* 
+            FROM erp_mes.production_order po
+            WHERE po.id >=%s
+            """
+        parameters=(id,)    
+        return self.send_query(query, parameters)
+    
+
+
+    def get_expedition_order_by_id(self, id):
+        """
+        Retrieves expedition orders from the database with an ID greater than or equal to the specified ID.
+
+        Args:
+         id (int): The ID to search for. Expedition orders with IDs greater than or equal to this value will be retrieved.
+
+        Returns:
+        list or None: A list of expedition orders matching the criteria, or None if no matching orders are found.
+        """
+        query= """ SELECT eo.* 
+            FROM erp_mes.expedition_order eo
+            WHERE eo.id >=%s
+            """
+        parameters=(id,)    
+        return self.send_query(query, parameters)
