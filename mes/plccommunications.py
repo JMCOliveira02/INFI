@@ -5,6 +5,7 @@ from mes import emoji
 from mes import CONSTANTS, bcolors
 from mes import Recipe
 from mes import ProductionOrder
+from mes import ExpeditionOrder
 
 
 
@@ -118,6 +119,21 @@ class PLCCommunication:
     
 
 
+    def getPieceBottomWH(self, type: int):
+        '''
+        Função para obter a peça no armazém inferior de uma máquina.
+
+        args:
+            type (int): tipo da peça.
+        return:
+            piece: número de peças no armazém superior da máquina.
+        '''
+        time.sleep(self.time_to_sleep) # pequeno compasso de espera para o PLC se atualizar
+        num_pieces = self.client.get_node(CONSTANTS["AvailableBottomWh"]["NamespaceIndex"] + "[" + str(type) + "]")
+        return num_pieces.get_value()
+    
+
+
     def setValueCheck(self, node, value, variant_type):
         '''
         Função para enviar um valor em um nó e verificar se 
@@ -198,12 +214,12 @@ class PLCCommunication:
     
 
 
-    def sendDelivery(self, order: ProductionOrder):
+    def sendDelivery(self, order: ExpeditionOrder):
         '''
         Função para enviar uma entrega para o PLC.
 
         args:
-            order (ProductionOrder): id da ordem.
+            order (ExpeditionOrder): id da ordem.
         return:
             None
         '''
