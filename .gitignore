@@ -2,3 +2,5 @@
 *.code-workspace
 __pycache__/
 *.bat
+relationalmodel.txt
+test.py
