@@ -8,30 +8,24 @@ from mes import emoji, bcolors
 
 
 class Database:
-    def __init__(self) -> None:
-        self.self.conn = None
-        self.connect()
-        pass
 
-
-    def connect(self):
-        '''
-        connect to data base
-        '''
-        print(f'\n{bcolors.BOLD}[Communications]{bcolors.ENDC} Connecting to Database...', end=" ", flush=True)
-        try:
-            self.conn = psycopg2.connect(
-                            host="db.fe.up.pt",
-                            port="5432",
-                            user="infind202407",
-                            password="infinito",
-                            database="infind202407"
-                        )
-            print(emoji.emojize('Connected to Database! :check_mark_button:'))
-        except psycopg2.Error as e:
-            print(emoji.emojize(f'\n{bcolors.BOLD}{bcolors.FAIL}[Communications]{bcolors.ENDC}{bcolors.ENDC} Error connecting to Database!  :cross_mark:'))
-
-
+    conn = None  # Class variable to store the database connection
+    
+    def __init__(self):
+        if not Database.conn:  # If connection doesn't exist, create it
+            print(f'\n{bcolors.BOLD}[Communications]{bcolors.ENDC} Connecting to Database...', end=" ", flush=True)
+            try:
+                Database.conn = psycopg2.connect(
+                    host="db.fe.up.pt",
+                    port="5432",
+                    user="infind202407",
+                    password="infinito",
+                    database="infind202407"
+                )
+                print(emoji.emojize('Connected to Database! :check_mark_button:'))
+            except psycopg2.Error as e:
+                print(emoji.emojize(f'\n{bcolors.BOLD}{bcolors.FAIL}[Communications]{bcolors.ENDC}{bcolors.ENDC} Error connecting to Database!  :cross_mark:'))
+                print(e)
 
     def disconnect(self):
         '''
@@ -62,11 +56,7 @@ class Database:
         '''
         try:
             cur = self.conn.cursor()
-
-            # if parameters is None:
-            #     cur.execute(query)
-            # else:
-            #     cur.execute(query, parameters)
+            cur.execute(query, (parameters))  # Use parameters directly here
 
             if fetch:
                 ans = cur.fetchall()
@@ -81,10 +71,9 @@ class Database:
             self.conn.rollback()
             ans = None
         finally:
-            # Close cursor (not necessary to close the connection)
+        # Close cursor (not necessary to close the connection)
             cur.close()
-
-        return ans
+        return ans   
     
 
     def get_all_supply_orders(self):
@@ -200,3 +189,23 @@ class Database:
             """
         parameters=(id,)    
         return self.send_query(query, parameters)
+    
+def add_piece_quantities_in_order(self, day, piece_quantities):
+    """
+    Adds piece quantities to the database in order.
+
+    Args:
+        piece_quantities (list of tuples): A list of piece quantities.
+
+    Returns:
+        bool: True if the piece quantities were successfully added, False otherwise.
+    """
+
+    # Iterate over the piece quantities and insert them into the database
+    for index, quantity in enumerate(piece_quantities, start=1):
+        query = "INSERT INTO erp_mes.stock (day, piece, quantity) VALUES (%s, %s, %s)"            
+        parameters = (day, index, quantity)
+        self.send_query(query, parameters, fetch=False)
+        
+
+
