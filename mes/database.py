@@ -207,5 +207,17 @@ def add_piece_quantities_in_order(self, day, piece_quantities):
         parameters = (day, index, quantity)
         self.send_query(query, parameters, fetch=False)
         
+def get_supply_orders_by_id(self, id):
+    """
+    Retrieves supply orders from the database where the ID is greater than the specified threshold.
 
+    Args:
+        id (int): The ID threshold.
+
+    Returns:
+        list: A list of tuples containing the supply order data if found, else an empty list.
+    """
+    query = """SELECT * FROM erp_mes.supply_order WHERE id > %s"""
+    parameters = (id,)
+    return self.send_query(query,(parameters))
 

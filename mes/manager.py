@@ -335,10 +335,10 @@ class Manager():
         return: 
             None
         '''
-        # supplier_orders = self.db.get_supplier_order_by_id(self.last_supplier_order_id)
-        # for supplier_order in supplier_orders:
-        #     self.supplier_orders.append(supplier_order)
-        #     self.last_supplier_order_id += 1
+        supplier_orders = self.db.get_supply_order_by_id(self.last_supplier_order_id)
+        for supplier_order in supplier_orders:
+            self.supplier_orders.append(supplier_order)
+            self.last_supplier_order_id += 1
         return
 
 
