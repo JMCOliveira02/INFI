@@ -74,6 +74,12 @@ class Manager():
 
         # Data
         self.clock = Clock()
+        self.prev_day = -1
+
+        # receção de encomendas do fornecedor
+        self.last_supplier_order_id = 0
+        self.supplier_orders = []
+        self.completed_suplier_orders = []
 
         # guarda as ordens de produção
         self.last_prod_order_id = 0
@@ -93,6 +99,13 @@ class Manager():
         self.stashed_recipes = [] # receitas que foram geraestás das, mas por motivo de otimização encontram-se paradas nos armazéns. recipe_id = None, in_production = false, piece_in != None, end = True
         self.waiting_recipes = [] # receitas que estão à espera de serem geradas. recipe_id = None, piece_in = None
         self.terminated_recipes = [] # receitas que terminaram todas as transformações. recipe_id = None, in_production = false, piece_in = target_piece, end = True
+
+        self.state = 0
+        self.prev_state = 0
+
+        self.new_day = True
+        self.updated_from_db = False
+
 
 
 
@@ -315,6 +328,21 @@ class Manager():
 
 
 
+    def getSupplierOrders(self):
+        '''
+        Função que obtém todas as ordens de produção ordenadas por quantidade de peças a produzir
+
+        return: 
+            None
+        '''
+        # supplier_orders = self.db.get_supplier_order_by_id(self.last_supplier_order_id)
+        # for supplier_order in supplier_orders:
+        #     self.supplier_orders.append(supplier_order)
+        #     self.last_supplier_order_id += 1
+        return
+
+
+
     def getActiveRecipeIndex(self):
         '''
         Função que obtém o índice de uma receita ativa a None
@@ -485,11 +513,14 @@ class Manager():
             if order.order_id == recipe.order_id:
                 if order.quantity_done == order.quantity:
                     order.status = order.FINISHED
-                    self.printSafely(emoji.emojize(f'\n{bcolors.BOLD}[MES]{bcolors.ENDC} Updating status of Production Order {bcolors.UNDERLINE}{order.order_id}{bcolors.ENDC} in database...'))
+                    self.printSafely(emoji.emojize(f'\n{bcolors.BOLD}[MES]{bcolors.ENDC} Updating status of Production Order {bcolors.UNDERLINE}{order.order_id}{bcolors.ENDC} in database...', end=" ", flush=True))
                     if self.db.insert_production_status(order.order_id, self.clock.curr_day):
                         # correu tudo ok. Remover ordem de produção da lista de ordens de produção e adicionar à lista de ordens completas
-                        self.orders.remove(order)
                         self.completed_orders.append(order)
+                        self.orders.remove(order)
+                        self.printSafely(emoji.emojize(f'{bcolors.OKGREEN}ok{bcolors.ENDC}'))
+                    else:
+                        self.printSafely(emoji.emojize(f'{bcolors.FAIL}fail{bcolors.ENDC}'))
                     break
                     
         return
@@ -508,36 +539,35 @@ class Manager():
         return:
             None
         '''
-        if any(self.active_recipes):
-            for recipe in self.active_recipes:
-                if recipe is not None: # receita válida
-                    self.client.getRecipeState(recipe) # obter o estado da receita
-                    if recipe.end and recipe.piece_out == recipe.target_piece and recipe.piece_in != recipe.piece_out and recipe.machine_id != -1 and recipe.machine_id != -2: # enviar receita para armazém inferior
-                        recipe.machine_id = -1
-                        recipe.piece_in = recipe.piece_out
-                        recipe.end = False
+        for recipe in self.active_recipes:
+            if recipe is not None: # receita válida
+                self.client.getRecipeState(recipe) # obter o estado da receita
+                if recipe.end and recipe.piece_out == recipe.target_piece and recipe.piece_in != recipe.piece_out and recipe.machine_id != -1 and recipe.machine_id != -2: # enviar receita para armazém inferior
+                    recipe.machine_id = -1
+                    recipe.piece_in = recipe.piece_out
+                    recipe.end = False
+                    self.client.sendRecipe(recipe)
+                elif recipe.end and recipe.piece_out == recipe.target_piece and recipe.piece_in == recipe.target_piece: # receita terminou todas as transformações
+                    recipe.finished_date = self.clock.get_time()
+                    self.updateRecipesActive("remove", recipe.recipe_id, recipe)
+                    self.updateRecipesTerminated("add", recipe)
+                    self.checkOrderComplete(recipe)
+                    self.printRecipesStatus()
+                elif recipe.end and recipe.piece_in != recipe.target_piece and recipe.machine_id == -2: # receita terminou transformação intermédia e foi enviada para armazém superior
+                    recipe.finished_date = self.clock.get_time()
+                    self.updateRecipesActive("remove", recipe.recipe_id, recipe)
+                    self.updateRecipesStash("add", recipe)
+                    self.printRecipesStatus()
+                elif recipe.end and recipe.piece_out != recipe.target_piece: # receita terminou transformação intermédia
+                    recipe.finished_date = self.clock.get_time()
+                    result = self.generateSingleRecipe(recipe)
+                    if result == -1: # não foi possível gerar a receita
+                        recipe.machine_id = -2 # enviar para armazém superior
                         self.client.sendRecipe(recipe)
-                    elif recipe.end and recipe.piece_out == recipe.target_piece and recipe.piece_in == recipe.target_piece: # receita terminou todas as transformações
-                        recipe.finished_date = self.clock.get_time()
-                        self.updateRecipesActive("remove", recipe.recipe_id, recipe)
-                        self.updateRecipesTerminated("add", recipe)
-                        self.checkOrderComplete(recipe)
-                        self.printRecipesStatus()
-                    elif recipe.end and recipe.piece_in != recipe.target_piece and recipe.machine_id == -2: # receita terminou transformação intermédia e foi enviada para armazém superior
-                        recipe.finished_date = self.clock.get_time()
-                        self.updateRecipesActive("remove", recipe.recipe_id, recipe)
-                        self.updateRecipesStash("add", recipe)
-                        self.printRecipesStatus()
-                    elif recipe.end and recipe.piece_out != recipe.target_piece: # receita terminou transformação intermédia
-                        recipe.finished_date = self.clock.get_time()
-                        result = self.generateSingleRecipe(recipe)
-                        if result == -1: # não foi possível gerar a receita
-                            recipe.machine_id = -2 # enviar para armazém superior
-                            self.client.sendRecipe(recipe)
-                        else:
-                            recipe = result
-                            self.printAssociatedRecipes()
-                            self.client.sendRecipe(recipe)
+                    else:
+                        recipe = result
+                        self.printAssociatedRecipes()
+                        self.client.sendRecipe(recipe)
         self.generateRecipes()
         return
         
@@ -593,27 +623,44 @@ class Manager():
             None
         '''
         # verificar expedições do dia
-        if len(self.deliveries) > 0:
-            if self.deliveries[0].status != self.deliveries[0].SENDING:
-                self.deliveries[0].status = self.deliveries[0].SENDING
-                # enviar order
-                self.printSafely(emoji.emojize(f'\n{bcolors.BOLD}[MES]{bcolors.ENDC} :delivery_truck:  Sending order {bcolors.UNDERLINE}{self.deliveries[0].order_id}{bcolors.ENDC}... :delivery_truck:'))
-                self.client.sendDelivery(self.deliveries[0])
-            else:
-                status_delivery = self.client.getDeliveryState(self.deliveries[0])
-                if status_delivery:
-                    self.printSafely(emoji.emojize(f'\n{bcolors.BOLD+bcolors.OKGREEN}[MES]{bcolors.ENDC + bcolors.ENDC} :grinning_face_with_big_eyes:  Order {bcolors.UNDERLINE}{self.deliveries[0].order_id}{bcolors.ENDC} delivered successfully at {self.clock.get_time_pretty()}! :check_mark_button:'))
-                    # # remover receitas associadas a esta ordem de produção
-                    # for recipe in self.recipes:
-                    #     if recipe.order_id == self.deliveries[0].order_id:
-                    #         self.updateRecipesTerminated("remove", recipe)
-                    #         self.recipes.remove(recipe)
-                    # remover ordem de expedição e adicionar à lista de ordens completas
-                    self.completed_deliveries.append(self.deliveries[0])
-                    self.deliveries.pop(0)
+        if self.deliveries[0].status == self.deliveries[0].PENDING: # enviar ordem de expedição
+            self.deliveries[0].status = self.deliveries[0].SENDING
+            # enviar order
+            self.printSafely(emoji.emojize(f'\n{bcolors.BOLD}[MES]{bcolors.ENDC} :delivery_truck:  Sending order {bcolors.UNDERLINE}{self.deliveries[0].order_id}{bcolors.ENDC}... :delivery_truck:'))
+            self.client.sendDelivery(self.deliveries[0])
+        else:
+            status_delivery = self.client.getDeliveryState(self.deliveries[0])
+            if status_delivery:
+                self.printSafely(emoji.emojize(f'\n{bcolors.BOLD+bcolors.OKGREEN}[MES]{bcolors.ENDC + bcolors.ENDC} :grinning_face_with_big_eyes:  Order {bcolors.UNDERLINE}{self.deliveries[0].order_id}{bcolors.ENDC} delivered successfully at {self.clock.get_time_pretty()}! :check_mark_button:'))
+                # # remover receitas associadas a esta ordem de produção
+                # for recipe in self.recipes:
+                #     if recipe.order_id == self.deliveries[0].order_id:
+                #         self.updateRecipesTerminated("remove", recipe)
+                #         self.recipes.remove(recipe)
+                # remover ordem de expedição e adicionar à lista de ordens completas
+                self.completed_deliveries.append(self.deliveries[0])
+                self.deliveries.pop(0)
 
 
-    
+
+    def waitCompleteSupplierOrder(self):
+        '''
+        Função que verifica se existe alguma encomenda do fornecedor e realiza a receção da mesma
+
+        args:
+            None
+        
+        return:
+            None
+        '''
+        if len(self.supplier_orders) > 0:
+            # receção de encomenda do fornecedor
+            self.cin.spawnPieces(self.supplier_orders[0])
+            self.completed_suplier_orders.append(self.supplier_orders[0])
+            self.supplier_orders.pop(0)
+
+
+
     def updatePiecesBottomWh(self):
         '''
         Função para verificar a existência de peças no armazém superior.
@@ -643,6 +690,7 @@ class Manager():
         if self.clock.curr_time_seconds >= 2 and self.clock.curr_time_seconds <= 5 and self.clock.curr_time_seconds >= self.krequest:
             self.getProductionsOrders()
             self.getExpedictionOrders()
+            self.getSupplierOrders()
             
             # verificar produções do dia
             for order in self.orders:
@@ -652,7 +700,7 @@ class Manager():
                     for i in range(order.quantity):
                         recipe_index = krecipes + i
                         self.recipes.append(Recipe(order.order_id, recipe_index, order.target_piece))
-                        self.updateRecipesWaiting("add", self.recipes[-1])
+                        self.updateRecipesWaiting("add", self.recipes[-1]) # adicionadas à fila de espera. Serão enviadas para produção assim que possível
                 
             self.printProductionOrders()
             self.printAssociatedRecipes()
@@ -661,6 +709,22 @@ class Manager():
         else:
             self.krequest = 0
         return
+
+
+
+    def cleanLists(self):
+        '''
+        Função que limpa as listas de ordens de produção, expedição e fornecedor completadas.
+
+        args:
+            None
+        
+        return:
+            None
+        '''
+        self.completed_orders.clear()
+        self.completed_deliveries.clear()
+        self.completed_suplier_orders.clear()
 
 
 
@@ -674,15 +738,35 @@ class Manager():
 
 
 
+    def stateMachine(self):
+        '''
+        Máquina de estados 
+        '''
+        # atualização da base de dados para o novo dia
+        if ((self.clock.curr_time_seconds >= 3) and
+            (self.clock.curr_time_seconds <= 5) and
+            (self.prev_day != self.clock.curr_day)):
+            self.dailyUpdateFromDB()
+            self.prev_day = self.clock.curr_day
+        # verifica se existem encomendas do fornecedor
+        if len(self.supplier_orders) > 0:
+            self.waitCompleteSupplierOrder()
+        # verifica se existem receitas ativas
+        if any(self.active_recipes):
+            self.waitSomeTransformation()
+        # verifica se existem expedições
+        if len(self.deliveries) > 0:
+            self.waitCompleteExpeditonOrder()
+
+
+
     def spin(self):
         '''
         Função que faz o lançamento das máquinas de estados de cada ordem de produção
         '''
         while True:
             try:
-                self.dailyUpdateFromDB()
-                self.waitCompleteExpeditonOrder()
-                self.waitSomeTransformation()
+                self.stateMachine()
                 self.clock.update_time()
             except KeyboardInterrupt:
                 self.handle_exit()
