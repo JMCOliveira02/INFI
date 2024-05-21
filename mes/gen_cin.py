@@ -27,18 +27,18 @@ class GenCin():
         args:
             num_pieces (list): número de peças a serem geradas de cada tipo. [1, 3] significa 1 peça do tipo 1 e 3 peças do tipo 2.
         return:
-            InvalidNumberPieces (Exception): caso o número de peças seja inválido ou não haja geradores disponíveis.
+            -1: caso o número de peças seja inválido ou não haja geradores disponíveis.
         '''
         # validar número de peças
         if any(piece < 0 for piece in num_pieces):
-            raise NameError(f"\n{bcolors.BOLD+bcolors.FAIL}[ERROR]{bcolors.ENDC+bcolors.ENDC} InvalidNumberPieces: Invalid number of pieces in supplier's order. (Shop Floor)", name="InvalidNumberPieces")
+            return -1
         
         print(emoji.emojize(f"\n{bcolors.BOLD}[Shop Floor]{bcolors.ENDC}: Supplier's order received and accepted. :check_mark_button:\n\033[4mOrder summary\033[0m:\n\tType 1 -> {num_pieces[0]} pieces\n\tType 2 -> {num_pieces[1]} pieces"))
         print("Working...", end=" ", flush=True)
 
         updatePiecesTopWh(self.client)
-        prev_type1 = cur_pieces_top_wh["P1"]
-        prev_type2 = cur_pieces_top_wh["P2"]
+        prev_type1 = cur_pieces_top_wh[1]
+        prev_type2 = cur_pieces_top_wh[2]
 
 
         # Se número de peças de cada tipo for maior que 1, dividir por duas threads cada tipo
@@ -63,7 +63,7 @@ class GenCin():
 
         # Esperar peças entrar no armazém
         updatePiecesTopWh(self.client)
-        while (cur_pieces_top_wh['P1'] < (prev_type1 + num_pieces[0])) or (cur_pieces_top_wh['P2'] < (prev_type2 + num_pieces[1])):
+        while (cur_pieces_top_wh[1] < (prev_type1 + num_pieces[0])) or (cur_pieces_top_wh[2] < (prev_type2 + num_pieces[1])):
             time.sleep(0.5)
             updatePiecesTopWh(self.client)
-        print(f"Supplier's order handed over. \n{bcolors.UNDERLINE}Current number of pieces available{bcolors.ENDC}:\n\tType 1 -> {cur_pieces_top_wh['P1']} pieces\n\tType 2 -> {cur_pieces_top_wh['P2']} pieces")
+        print(f"Supplier's order handed over. \n{bcolors.UNDERLINE}Current number of pieces available{bcolors.ENDC}:\n\tType 1 -> {cur_pieces_top_wh[1]} pieces\n\tType 2 -> {cur_pieces_top_wh[2]} pieces")
