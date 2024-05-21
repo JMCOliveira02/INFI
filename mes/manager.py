@@ -5,6 +5,7 @@ from mes import groupby
 from mes import Database
 from mes import Clock
 from mes import ProductionOrder
+from mes import ExpeditionOrder
 from mes import Scheduling
 from mes import PLCCommunication
 from mes import generateGrahps
@@ -63,7 +64,6 @@ class Manager():
             print(traceback.format_exc())
             self.client.clientDisconnect()
             sys.exit()
-        self.krequest = 0 # número de pedidos à base de dados a cada dia. variável auxiliar que incrementa a cada segundo
 
         # gerar grafos e grafo simples
         self.G, self.G_simple = generateGrahps()
@@ -77,17 +77,17 @@ class Manager():
         self.prev_day = -1
 
         # receção de encomendas do fornecedor
-        self.last_supplier_order_id = 0
+        self.last_supplier_order_id = 1
         self.supplier_orders = []
         self.completed_suplier_orders = []
 
         # guarda as ordens de produção
-        self.last_prod_order_id = 0
+        self.last_prod_order_id = 1
         self.orders = []
         self.completed_orders = []
 
         # guarda as ordens de expedição
-        self.last_exp_order_id = 0
+        self.last_exp_order_id = 1
         self.deliveries = []
         self.completed_deliveries = []
 
@@ -99,13 +99,6 @@ class Manager():
         self.stashed_recipes = [] # receitas que foram geraestás das, mas por motivo de otimização encontram-se paradas nos armazéns. recipe_id = None, in_production = false, piece_in != None, end = True
         self.waiting_recipes = [] # receitas que estão à espera de serem geradas. recipe_id = None, piece_in = None
         self.terminated_recipes = [] # receitas que terminaram todas as transformações. recipe_id = None, in_production = false, piece_in = target_piece, end = True
-
-        self.state = 0
-        self.prev_state = 0
-
-        self.new_day = True
-        self.updated_from_db = False
-
 
 
 
@@ -231,7 +224,7 @@ class Manager():
                 print(f"Time: {recipe.time if recipe.time is not None else '-':<10}", end="")
                 print(f"Transformation: ({recipe.current_transformation[0] if recipe.current_transformation is not None else '-':<2},{recipe.current_transformation[1] if recipe.current_transformation is not None else '-':<2})", end="  ")
                 print(f"Sended date: {str(recipe.sended_date) if recipe.sended_date is not None else '-'}", end=" -> ")
-                print(f"Finished date: {str(recipe.finished_date) if recipe.finished_date is not None else '-'}")
+                print(f"Finished date: ({int(recipe.finished_date[0]) if recipe.finished_date[0] is not None else '-'}, {int(recipe.finished_date[1]) if recipe.finished_date[1] is not None else '-'})")
 
     
 
@@ -290,12 +283,31 @@ class Manager():
         parsed_production_order = []
         parsed_production_order.append(production_order[0]) # order id
         parsed_production_order.append(production_order[1]) # client id
-        # tipo de peça
-        parsed_production_order.append(int(production_order[2][1:]))
+        parsed_production_order.append(int(production_order[2][1:])) # tipo de peça
         parsed_production_order.append(production_order[3]) # quantidade
         parsed_production_order.append(production_order[4]) # data de inicio
         return parsed_production_order
     
+
+
+    def parseExpeditionOrder(self, expedition_order: list):
+        '''
+        Função para fazer o parse da expedition order recebido do erp.
+
+        args:
+            expedition_order (list): lista recebida do erp
+
+        returns:
+            parsed_expedition_order (list): lista de produção com parse
+        '''
+        parsed_expedition_order = []
+        parsed_expedition_order.append(expedition_order[0]) # order id
+        parsed_expedition_order.append(expedition_order[1]) # client id
+        parsed_expedition_order.append(int(expedition_order[2])) # tipo de peça
+        parsed_expedition_order.append(expedition_order[3]) # quantidade
+        parsed_expedition_order.append(expedition_order[4]) # data de expedição
+        return parsed_expedition_order
+
 
 
     def getProductionsOrders(self):
@@ -322,7 +334,8 @@ class Manager():
         '''
         expedition_orders = self.db.get_expedition_order_by_id(self.last_exp_order_id)
         for expedition_order in expedition_orders:
-            self.deliveries.append(expedition_order)
+            expedition_order = self.parseExpeditionOrder(expedition_order)
+            self.deliveries.append(ExpeditionOrder(expedition_order))
             self.last_exp_order_id += 1
         return
 
@@ -469,7 +482,7 @@ class Manager():
         if len(recipes_to_check) > 0:
             recipe_to_check = recipes_to_check[0]
             status = "stashed" if recipe_to_check in self.stashed_recipes else "waiting"
-            recipe_to_check = self.schedule.schedule(recipe_to_check, status, self.active_recipes, self.stashed_recipes)
+            recipe_to_check = self.schedule.schedule(self.clock, recipe_to_check, status, self.active_recipes, self.stashed_recipes)
             if not isinstance(recipe_to_check, int):
                 self.updateRecipesStash("remove", recipe_to_check if status == "stashed" else None)
                 self.updateRecipesWaiting("remove", recipe_to_check if status == "waiting" else None)
@@ -491,7 +504,7 @@ class Manager():
             recipe: Recipe -> receita gerada
             -1: Não foi possível gerar a receita
         '''
-        schedule = self.schedule.schedule(recipe, "active", self.active_recipes, self.stashed_recipes) # tentar primeiro máquinas pares
+        schedule = self.schedule.schedule(self.clock, recipe, "active", self.active_recipes, self.stashed_recipes) # tentar primeiro máquinas pares
         if isinstance(schedule, int):
             return -1
         return schedule
@@ -513,14 +526,14 @@ class Manager():
             if order.order_id == recipe.order_id:
                 if order.quantity_done == order.quantity:
                     order.status = order.FINISHED
-                    self.printSafely(emoji.emojize(f'\n{bcolors.BOLD}[MES]{bcolors.ENDC} Updating status of Production Order {bcolors.UNDERLINE}{order.order_id}{bcolors.ENDC} in database...', end=" ", flush=True))
+                    print(f'\n{bcolors.BOLD}[MES]{bcolors.ENDC} Updating status of Production Order {bcolors.UNDERLINE}{order.order_id}{bcolors.ENDC} in database...', end=" ", flush=True)
                     if self.db.insert_production_status(order.order_id, self.clock.curr_day):
                         # correu tudo ok. Remover ordem de produção da lista de ordens de produção e adicionar à lista de ordens completas
                         self.completed_orders.append(order)
                         self.orders.remove(order)
-                        self.printSafely(emoji.emojize(f'{bcolors.OKGREEN}ok{bcolors.ENDC}'))
+                        print(emoji.emojize(f'{bcolors.OKGREEN}ok{bcolors.ENDC}'))
                     else:
-                        self.printSafely(emoji.emojize(f'{bcolors.FAIL}fail{bcolors.ENDC}'))
+                        print(emoji.emojize(f'{bcolors.FAIL}fail{bcolors.ENDC}'))
                     break
                     
         return
@@ -568,7 +581,7 @@ class Manager():
                         recipe = result
                         self.printAssociatedRecipes()
                         self.client.sendRecipe(recipe)
-        self.generateRecipes()
+        # self.generateRecipes()
         return
         
 
@@ -622,6 +635,13 @@ class Manager():
         return:
             None
         '''
+        # verificar se dia de expedição corresponde ao atual
+        if self.deliveries[0].expedition_date != self.clock.curr_day:
+            return
+        # verificar se número de peças da ordem de expedição existe no armazém
+        self.updatePiecesBottomWh()
+        if cur_pieces_bottom_wh[self.deliveries[0].target_piece] != self.deliveries[0].quantity:
+            return
         # verificar expedições do dia
         if self.deliveries[0].status == self.deliveries[0].PENDING: # enviar ordem de expedição
             self.deliveries[0].status = self.deliveries[0].SENDING
@@ -687,27 +707,25 @@ class Manager():
             None
         '''
         # entre os segundos 2 e 5 de cada dia, requisitar à base de dados a cada segundo
-        if self.clock.curr_time_seconds >= 2 and self.clock.curr_time_seconds <= 5 and self.clock.curr_time_seconds >= self.krequest:
-            self.getProductionsOrders()
-            self.getExpedictionOrders()
-            self.getSupplierOrders()
+        self.printSafely(f'\n{bcolors.BOLD}[MES]{bcolors.ENDC} Day: {self.clock.curr_day}')
+        self.getProductionsOrders()
+        self.getExpedictionOrders()
+        # self.getSupplierOrders()
+        
+        # verificar produções do dia
+        for order in self.orders:
+            if order.start_date == self.clock.curr_day and order.status == order.PENDING:
+                order.status = order.PRODUCING # passa a estado de produção e gera receitas
+                krecipes = len(self.recipes)
+                for i in range(order.quantity):
+                    recipe_index = krecipes + i
+                    self.recipes.append(Recipe(order.order_id, recipe_index, order.target_piece))
+                    self.updateRecipesWaiting("add", self.recipes[-1]) # adicionadas à fila de espera. Serão enviadas para produção assim que possível
             
-            # verificar produções do dia
-            for order in self.orders:
-                if order.start_date == self.clock.curr_day and order.satatus == order.PENDING:
-                    order.status = order.PRODUCING # passa a estado de produção e gera receitas
-                    krecipes = len(self.recipes)
-                    for i in range(order.quantity):
-                        recipe_index = krecipes + i
-                        self.recipes.append(Recipe(order.order_id, recipe_index, order.target_piece))
-                        self.updateRecipesWaiting("add", self.recipes[-1]) # adicionadas à fila de espera. Serão enviadas para produção assim que possível
-                
             self.printProductionOrders()
+            self.printExpeditionOrders()
             self.printAssociatedRecipes()
             self.printRecipesStatus()
-            self.krequest = self.clock.curr_time_seconds + 1
-        else:
-            self.krequest = 0
         return
 
 
@@ -748,9 +766,11 @@ class Manager():
             (self.prev_day != self.clock.curr_day)):
             self.dailyUpdateFromDB()
             self.prev_day = self.clock.curr_day
+        if isinstance(self.active_recipes.index(None), int):
+            self.generateRecipes()
         # verifica se existem encomendas do fornecedor
-        if len(self.supplier_orders) > 0:
-            self.waitCompleteSupplierOrder()
+        # if len(self.supplier_orders) > 0:
+        #     self.waitCompleteSupplierOrder()
         # verifica se existem receitas ativas
         if any(self.active_recipes):
             self.waitSomeTransformation()
