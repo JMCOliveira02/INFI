@@ -190,34 +190,34 @@ class Database:
         parameters=(id,)    
         return self.send_query(query, parameters)
     
-def add_piece_quantities_in_order(self, day, piece_quantities):
-    """
-    Adds piece quantities to the database in order.
+    def add_piece_quantities_in_order(self, day, piece_quantities):
+        """
+        Adds piece quantities to the database in order.
 
-    Args:
-        piece_quantities (list of tuples): A list of piece quantities.
+        Args:
+            piece_quantities (list of tuples): A list of piece quantities.
 
-    Returns:
-        bool: True if the piece quantities were successfully added, False otherwise.
-    """
+        Returns:
+            bool: True if the piece quantities were successfully added, False otherwise.
+        """
 
-    # Iterate over the piece quantities and insert them into the database
-    for index, quantity in enumerate(piece_quantities, start=1):
-        query = "INSERT INTO erp_mes.stock (day, piece, quantity) VALUES (%s, %s, %s)"            
-        parameters = (day, index, quantity)
-        self.send_query(query, parameters, fetch=False)
-        
-def get_supply_orders_by_id(self, id):
-    """
-    Retrieves supply orders from the database where the ID is greater than the specified threshold.
+        # Iterate over the piece quantities and insert them into the database
+        for index, quantity in enumerate(piece_quantities, start=1):
+            query = "INSERT INTO erp_mes.stock (day, piece, quantity) VALUES (%s, %s, %s)"            
+            parameters = (day, index, quantity)
+            self.send_query(query, parameters, fetch=False)
+            
+    def get_supply_orders_by_id(self, id):
+        """
+        Retrieves supply orders from the database where the ID is greater than the specified threshold.
 
-    Args:
-        id (int): The ID threshold.
+        Args:
+            id (int): The ID threshold.
 
-    Returns:
-        list: A list of tuples containing the supply order data if found, else an empty list.
-    """
-    query = """SELECT * FROM erp_mes.supply_order WHERE id > %s"""
-    parameters = (id,)
-    return self.send_query(query,(parameters))
+        Returns:
+            list: A list of tuples containing the supply order data if found, else an empty list.
+        """
+        query = """SELECT * FROM erp_mes.supply_order WHERE id > %s"""
+        parameters = (id,)
+        return self.send_query(query,(parameters))
 
