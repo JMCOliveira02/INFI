@@ -109,6 +109,14 @@ class Database:
         """
         parameters = (production_order_id, end_date)
         self.send_query(query, parameters, fetch=False)  
+
+    def insert_bottom_stock(self, day: int, stock: dict):
+        for piece, quantity in stock.items():
+            query = """
+                INSERT INTO erp_mes.stock (day, piece, quantity)
+                VALUES (%s, %s, %s);
+            """
+            self.send_query(query, (day, "P"+str(piece), quantity), fetch=False)
     
     def get_expedition_order(self):
         return self.send_query(

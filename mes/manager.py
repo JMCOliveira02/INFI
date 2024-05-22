@@ -76,6 +76,7 @@ class Manager():
         # Data
         self.clock = Clock()
         self.prev_day = -1
+        self.bottom_updated = False
 
         # receção de encomendas do fornecedor
         self.last_supplier_order_id = 1
@@ -374,7 +375,6 @@ class Manager():
             supplier_order = self.parseSupplierOrder(supplier_order)
             self.supplier_orders.append(Suplier(supplier_order[0], supplier_order[1], supplier_order[2]))
             self.last_supplier_order_id += 1
-            print(self.supplier_orders)
         return
 
 
@@ -588,12 +588,12 @@ class Manager():
                     self.updateRecipesActive("remove", recipe.recipe_id, recipe)
                     self.updateRecipesTerminated("add", recipe)
                     self.checkOrderComplete(recipe)
-                    self.printRecipesStatus()
+                    # self.printRecipesStatus()
                 elif recipe.end and recipe.piece_in != recipe.target_piece and recipe.machine_id == -2: # receita terminou transformação intermédia e foi enviada para armazém superior
                     recipe.finished_date = self.clock.get_time()
                     self.updateRecipesActive("remove", recipe.recipe_id, recipe)
                     self.updateRecipesStash("add", recipe)
-                    self.printRecipesStatus()
+                    # self.printRecipesStatus()
                 elif recipe.end and recipe.piece_out != recipe.target_piece: # receita terminou transformação intermédia
                     recipe.finished_date = self.clock.get_time()
                     result = self.generateSingleRecipe(recipe)
@@ -644,7 +644,7 @@ class Manager():
                     self.orders.remove(self.completed_orders[0])
                     # remover ordem de produção da lista de ordens completas
                     self.completed_orders.pop(0)
-                    self.printProductionOrders()
+                    # self.printProductionOrders()
         return
           
 
@@ -658,6 +658,23 @@ class Manager():
         return:
             None
         '''
+        if self.deliveries[0].status == self.deliveries[0].SENDING:
+            status_delivery = self.client.getDeliveryState(self.deliveries[0])
+            print("Print Status delivery: ", status_delivery)
+            if status_delivery:
+                print(emoji.emojize(f'\n{bcolors.BOLD+bcolors.OKGREEN}[MES]{bcolors.ENDC + bcolors.ENDC} :grinning_face_with_big_eyes:  Order {bcolors.UNDERLINE}{self.deliveries[0].order_id}{bcolors.ENDC} delivered successfully at {self.clock.get_time_pretty()}! :check_mark_button:'))
+                # # remover receitas associadas a esta ordem de produção
+                for recipe in self.recipes:
+                    if recipe.order_id == self.deliveries[0].order_id:
+                        self.updateRecipesTerminated("remove", recipe)
+                        self.recipes.remove(recipe)
+                # atualizar base de dados sobre estado da expedicão
+                self.db.expedition_production_status(self.deliveries[0].order_id, self.clock.curr_day)
+                # remover ordem de expedição e adicionar à lista de ordens completas
+                self.completed_deliveries.append(self.deliveries[0])
+                self.deliveries.pop(0)
+                return
+
         # verificar se dia de expedição corresponde ao atual
         if self.deliveries[0].expedition_date > self.clock.curr_day:
             return
@@ -665,24 +682,13 @@ class Manager():
         self.updatePiecesBottomWh()
         if cur_pieces_bottom_wh[self.deliveries[0].target_piece] != self.deliveries[0].quantity:
             return
+        print("entrei")
         # verificar expedições do dia
         if self.deliveries[0].status == self.deliveries[0].PENDING: # enviar ordem de expedição
             self.deliveries[0].status = self.deliveries[0].SENDING
             # enviar order
             print(emoji.emojize(f'\n{bcolors.BOLD}[MES]{bcolors.ENDC} :delivery_truck:  Sending order {bcolors.UNDERLINE}{self.deliveries[0].order_id}{bcolors.ENDC}... :delivery_truck:'))
             self.client.sendDelivery(self.deliveries[0])
-        elif self.deliveries[0].status == self.deliveries[0].SENDING:
-            status_delivery = self.client.getDeliveryState(self.deliveries[0])
-            if status_delivery:
-                print(emoji.emojize(f'\n{bcolors.BOLD+bcolors.OKGREEN}[MES]{bcolors.ENDC + bcolors.ENDC} :grinning_face_with_big_eyes:  Order {bcolors.UNDERLINE}{self.deliveries[0].order_id}{bcolors.ENDC} delivered successfully at {self.clock.get_time_pretty()}! :check_mark_button:'))
-                # # remover receitas associadas a esta ordem de produção
-                # for recipe in self.recipes:
-                #     if recipe.order_id == self.deliveries[0].order_id:
-                #         self.updateRecipesTerminated("remove", recipe)
-                #         self.recipes.remove(recipe)
-                # remover ordem de expedição e adicionar à lista de ordens completas
-                self.completed_deliveries.append(self.deliveries[0])
-                self.deliveries.pop(0)
 
 
 
@@ -734,6 +740,7 @@ class Manager():
         self.getProductionsOrders()
         self.getExpedictionOrders()
         self.getSupplierOrders()
+        self.cleanLists()
         
         # verificar produções do dia
         for order in self.orders:
@@ -755,7 +762,7 @@ class Manager():
 
     def cleanLists(self):
         '''
-        Função que limpa as listas de ordens de produção, expedição e fornecedor completadas. E RECEITAS?!!??!
+        Função que limpa as listas de ordens de produção, expedição e fornecedor completadas.
 
         args:
             None
@@ -783,12 +790,20 @@ class Manager():
         '''
         Máquina de estados 
         '''
+        # atualização da base de dados no final do dia para o stock de peças no armazém inferior
+        if ((self.clock.curr_time_seconds >= 55) and
+            (self.clock.curr_time_seconds <= 59) and
+            (not self.bottom_updated)):
+            self.updatePiecesBottomWh()
+            self.db.insert_bottom_stock(self.clock.curr_day, cur_pieces_bottom_wh)
+            self.bottom_updated = True
         # atualização da base de dados para o novo dia
         if ((self.clock.curr_time_seconds >= 3) and
             (self.clock.curr_time_seconds <= 5) and
             (self.prev_day != self.clock.curr_day)):
             self.dailyUpdateFromDB()
             self.prev_day = self.clock.curr_day
+            self.bottom_updated = False
         if isinstance(self.active_recipes.index(None), int):
             self.generateRecipes()
         # verifica se existem encomendas do fornecedor
