@@ -297,6 +297,6 @@ class Scheduling():
         recipe.end = False
         recipe.current_transformation = (edge_[0], edge_[1])
         end_time_prediction = (recipe.time + (Ttool if recipe.tool != cur_machine_tool[recipe.machine_id] else 0)) / 1000 # tempo de transformação + tempo de mudança de ferramenta se ferramenta a utilizar for diferente da atual
-        recipe.finished_date = clock.add_seconds(recipe.sended_date, (clock.diff_between_times(recipe.finished_date, recipe.sended_date) + end_time_prediction))
+        recipe.finished_date = clock.add_seconds(recipe.sended_date, clock.diff_between_times(recipe.finished_date, recipe.sended_date) + end_time_prediction)
 
         return recipe
