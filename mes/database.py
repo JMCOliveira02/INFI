@@ -217,7 +217,7 @@ class Database:
         Returns:
             list: A list of tuples containing the supply order data if found, else an empty list.
         """
-        query = """SELECT * FROM erp_mes.supply_order WHERE id > %s"""
+        query = """SELECT * FROM erp_mes.delivery WHERE id >= %s"""
         parameters = (id,)
         return self.send_query(query,(parameters))
 
