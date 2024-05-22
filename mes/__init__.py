@@ -13,6 +13,7 @@ from utils import *
 from .recipes import *
 from .production_order import *
 from .expedition_order import *
+from .supplier import *
 from .transformations import *
 from .database import *
 from .clock import *
