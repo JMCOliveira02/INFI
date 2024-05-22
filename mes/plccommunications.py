@@ -235,13 +235,13 @@ class PLCCommunication:
 
 
 
-    def getDeliveryState(self, order: ProductionOrder):
+    def getDeliveryState(self, order: ExpeditionOrder):
         '''
         Função para obter o estado de uma entrega. Se a entrega foi enviada
         procede a alterar o estado da order para DONE.
 
         args:
-            order (ProductionOrder): id da ordem.
+            order (ExpeditionOrder): id da ordem.
         return:
             True: se a entrega foi enviada.
             False: se a entrega não foi enviada.
