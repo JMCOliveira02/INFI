@@ -141,20 +141,6 @@ class Manager():
         return [(order_id, list(recipes)) for order_id, recipes in groups]
 
 
-
-    def printSafely(self, message: str):
-        '''
-        Função que imprime uma mensagem de forma segura
-
-        args:
-            message: str -> mensagem a imprimir
-        return:
-            None
-        '''
-        print(message)
-
-
-
     def printExpeditionOrders(self):
         '''
         Função que imprime as ordens de expedição
@@ -629,12 +615,12 @@ class Manager():
             if self.completed_orders[0].status != self.completed_orders[0].SENDING:
                 self.completed_orders[0].status = self.completed_orders[0].SENDING
                 # enviar order
-                self.printSafely(emoji.emojize(f'\n{bcolors.BOLD}[MES]{bcolors.ENDC} :delivery_truck:  Sending order {bcolors.UNDERLINE}{self.completed_orders[0].order_id}{bcolors.ENDC}... :delivery_truck:'))
+                print(emoji.emojize(f'\n{bcolors.BOLD}[MES]{bcolors.ENDC} :delivery_truck:  Sending order {bcolors.UNDERLINE}{self.completed_orders[0].order_id}{bcolors.ENDC}... :delivery_truck:'))
                 self.client.sendDelivery(self.completed_orders[0])
             else:
                 status_delivery = self.client.getDeliveryState(self.completed_orders[0])
                 if status_delivery:
-                    self.printSafely(emoji.emojize(f'\n{bcolors.BOLD+bcolors.OKGREEN}[MES]{bcolors.ENDC + bcolors.ENDC} :grinning_face_with_big_eyes:  Order {bcolors.UNDERLINE}{self.completed_orders[0].order_id}{bcolors.ENDC} delivered successfully at {self.clock.get_time_pretty()}! :check_mark_button:'))
+                    print(emoji.emojize(f'\n{bcolors.BOLD+bcolors.OKGREEN}[MES]{bcolors.ENDC + bcolors.ENDC} :grinning_face_with_big_eyes:  Order {bcolors.UNDERLINE}{self.completed_orders[0].order_id}{bcolors.ENDC} delivered successfully at {self.clock.get_time_pretty()}! :check_mark_button:'))
                     # remover receitas associadas a esta ordem de produção
                     for recipe in self.recipes:
                         if recipe.order_id == self.completed_orders[0].order_id:
@@ -736,7 +722,7 @@ class Manager():
             None
         '''
         # entre os segundos 2 e 5 de cada dia, requisitar à base de dados a cada segundo
-        self.printSafely(f'\n{bcolors.BOLD}[MES]{bcolors.ENDC} Day: {self.clock.curr_day}')
+        print(f'\n{bcolors.BOLD}[MES]{bcolors.ENDC} Day: {self.clock.curr_day}')
         self.getProductionsOrders()
         self.getExpedictionOrders()
         self.getSupplierOrders()
