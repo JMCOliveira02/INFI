@@ -31,14 +31,14 @@ class GenCin():
         '''
         # validar número de peças
         if any(piece < 0 for piece in num_pieces):
-            print(emoji.emojize(f"\n{bcolors.FAIL+bcolors.BOLD}[Shop Floor]{bcolors.ENDC+bcolors.ENDC}:{bcolors.FAIL} Invalid number of pieces {bcolors.UNDERLINE}{num_pieces}{bcolors.ENDC}"))
+            print(emoji.emojize(f"\n{bcolors.FAIL+bcolors.BOLD}[Shop Floor]{bcolors.ENDC+bcolors.ENDC} Invalid number of pieces {bcolors.UNDERLINE}{num_pieces}{bcolors.ENDC}"))
             return -1
         # validar número de peças for igual a zero
         if sum(num_pieces) == 0:
-            print(emoji.emojize(f"\n{bcolors.WARNING+bcolors.BOLD}[Shop Floor]{bcolors.ENDC}: :warning: Supplier's order received but there are no pieces to spawn{bcolors.ENDC}"))
+            print(emoji.emojize(f"\n{bcolors.WARNING+bcolors.BOLD}[Shop Floor]{bcolors.ENDC+bcolors.ENDC}:warning:  Supplier's order received but there are no pieces to spawn!"))
             return -1
 
-        print(emoji.emojize(f"\n{bcolors.BOLD}[Shop Floor]{bcolors.ENDC}: Supplier's order received and accepted. :check_mark_button:\n\033[4mOrder summary\033[0m:\n\tType 1 -> {num_pieces[0]} pieces\n\tType 2 -> {num_pieces[1]} pieces"))
+        print(emoji.emojize(f"\n{bcolors.BOLD}[Shop Floor]{bcolors.ENDC} Supplier's order received and accepted. :check_mark_button:\n{bcolors.UNDERLINE}Order summary{bcolors.ENDC}:\n\tType 1 -> {num_pieces[0]} pieces\n\tType 2 -> {num_pieces[1]} pieces"))
         print("Working...", end=" ", flush=True)
 
         updatePiecesTopWh(self.client)
