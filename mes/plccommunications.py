@@ -36,7 +36,7 @@ class PLCCommunication:
         return:
             None
         '''
-        print(f'\n{bcolors.BOLD}[Communications]{bcolors.ENDC} Connecting to OPC-UA server...', end=" ", flush=True)
+        print(f'\n{bcolors.BOLD}[PLC]{bcolors.ENDC} Connecting to OPC-UA server...', end=" ", flush=True)
         self.client = Client(self.opcua_connection)
         self.client.connect()
         print(emoji.emojize('Connected to OPC-UA server! :check_mark_button:'))
@@ -53,7 +53,7 @@ class PLCCommunication:
         return:
             None
         '''
-        print(f'\n{bcolors.BOLD}[Communications]{bcolors.ENDC} Disconnecting from OPC-UA server...', end=" ", flush=True)
+        print(f'\n{bcolors.BOLD}[PLC]{bcolors.ENDC} Disconnecting from OPC-UA server...', end=" ", flush=True)
         self.client.disconnect()
         print(emoji.emojize('Disconnected from OPC-UA server! :check_mark_button:'))
         return
