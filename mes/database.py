@@ -12,30 +12,53 @@ class Database:
     conn = None  # Class variable to store the database connection
     
     def __init__(self):
-        if not Database.conn:  # If connection doesn't exist, create it
-            print(f'\n{bcolors.BOLD}[Communications]{bcolors.ENDC} Connecting to Database...', end=" ", flush=True)
-            try:
-                Database.conn = psycopg2.connect(
-                    host="db.fe.up.pt",
-                    port="5432",
-                    user="infind202407",
-                    password="infinito",
-                    database="infind202407"
-                )
-                print(emoji.emojize('Connected to Database! :check_mark_button:'))
-            except psycopg2.Error as e:
-                print(emoji.emojize(f'\n{bcolors.BOLD}{bcolors.FAIL}[Communications]{bcolors.ENDC}{bcolors.ENDC} Error connecting to Database!  :cross_mark:'))
-                print(e)
+        self.host="db.fe.up.pt"
+        self.port="5432"
+        self.user="infind202407"
+        self.password="infinito"
+        self.database="infind202407"
+        # if not Database.conn:  # If connection doesn't exist, create it
+        #     print(f'\n{bcolors.BOLD}[Communications]{bcolors.ENDC} Connecting to Database...', end=" ", flush=True)
+        #     try:
+        #         Database.conn = psycopg2.connect(
+        #             host="db.fe.up.pt",
+        #             port="5432",
+        #             user="infind202407",
+        #             password="infinito",
+        #             database="infind202407"
+        #         )
+        #         print(emoji.emojize('Connected to Database! :check_mark_button:'))
+        #     except psycopg2.Error as e:
+        #         print(emoji.emojize(f'\n{bcolors.BOLD}{bcolors.FAIL}[Communications]{bcolors.ENDC}{bcolors.ENDC} Error connecting to Database!  :cross_mark:'))
+        #         print(e)
+
+    def connect(self):
+        # conn = None
+        try:
+            conn = psycopg2.connect(
+                host=self.host,
+                port=self.port,
+                user=self.user,
+                password=self.password,
+                database=self.database
+            )
+        except psycopg2.Error as e:
+            print(f'\n{bcolors.BOLD+bcolors.FAIL}[Database]{bcolors.ENDC+bcolors.ENDC} Error connecting to the database!  :cross_mark:')
+            print(e)
+        
+        return conn
+    
+
 
     def disconnect(self):
         '''
         disconnect from data base
         '''
-        print(f'\n{bcolors.BOLD}[Communications]{bcolors.ENDC} Disconnecting from Database...', end=" ", flush=True)
+        print(f'\n{bcolors.BOLD}[Database]{bcolors.ENDC} Disconnecting from Database...', end=" ", flush=True)
         try:
             self.conn.close()
         except psycopg2.Error as e:
-            print(emoji.emojize(f'\n{bcolors.BOLD}{bcolors.FAIL}[Communications]{bcolors.ENDC}{bcolors.ENDC} Error disconnecting from Database!  :cross_mark:'))
+            print(emoji.emojize(f'\n{bcolors.BOLD}{bcolors.FAIL}[Database]{bcolors.ENDC}{bcolors.ENDC} Error disconnecting from Database!  :cross_mark:'))
             return
         print(emoji.emojize('Disconnected from Database! :check_mark_button:'))
         return
@@ -55,24 +78,28 @@ class Database:
             The result of the query if fetch is True, otherwise None.
         '''
         try:
-            cur = self.conn.cursor()
+            conn = self.connect()
+            cur = conn.cursor()
             cur.execute(query, (parameters))  # Use parameters directly here
 
             if fetch:
                 ans = cur.fetchall()
             else:
                 ans = None
-
-            self.conn.commit()
+            conn.commit()
+            cur.close()
+            conn.close()
         except psycopg2.Error as e:
-            print(f'\n{bcolors.BOLD}[Communications]{bcolors.ENDC} Error executing query: ', end=" ", flush=True)
+            print(f'\n{bcolors.BOLD+bcolors.FAIL}[Database]{bcolors.ENDC+bcolors.ENDC} Error executing query: ', end=" ", flush=True)
             print(e)
             # Rollback any changes made during the transaction
-            self.conn.rollback()
+            conn.rollback()
             ans = None
-        finally:
-        # Close cursor (not necessary to close the connection)
-            cur.close()
+        # finally:
+        # # Close cursor (not necessary to close the connection)
+        #     conn.commit()
+        #     cur.close()
+        #     conn.close()
         return ans   
     
 
@@ -110,7 +137,7 @@ class Database:
         parameters = (production_order_id, end_date)
         self.send_query(query, parameters, fetch=False)  
 
-    def insert_bottom_stock(self, day: int, stock: dict):
+    def insert_stock(self, day: int, stock: dict):
         for piece, quantity in stock.items():
             query = """
                 INSERT INTO erp_mes.stock (day, piece, quantity)
@@ -143,21 +170,33 @@ class Database:
 
     def update_initial_time(self):
         getReset_query = f"SELECT reset FROM erp_mes.\"start_time\""
-        reset = self.send_query(getReset_query)[0][0]
+        # reset = self.send_query(getReset_query)[0][0]
+        reset = self.send_query(getReset_query)
+        if len(reset) == 0:
+            reset = False
+            initialTime = datetime.datetime.now()
+            query = """INSERT INTO erp_mes.start_time (initial_time, reset, id) 
+                VALUES (%s, %s, 1)
+            """
+            parameters = (initialTime, reset)
+            self.send_query(query, parameters, False)
+            print(f'\n{bcolors.BOLD}[MES]{bcolors.ENDC} Day 0 : {str(initialTime)}')
+            return initialTime
+        # else:
+        #     reset = reset[0][1]
 
         # Reset a falso significa que o MES foi abaixo
         # Reset a verdadeiro significa que a execução atual do MES começa no dia 0, 
         #   armazenando-se o instante de execução na base de dados como instante 
         #   inicial
 
-        if reset == False:
-            getTime_query = f"SELECT initial_time FROM erp_mes.\"start_time\""
-            initialTime = reset = self.send_query(getTime_query)[0][0]
-        if reset == True:
-            initialTime = datetime.datetime.now()
-            query = f"UPDATE erp_mes.\"start_time\" SET initial_time = '{initialTime}'"
-            self.send_query(query, None, False)
-        print(f'\n{bcolors.BOLD}[MES]{bcolors.ENDC} Day 0 : {str(initialTime)}')
+        # if reset == True:
+        initialTime = datetime.datetime.now()
+        query = f"UPDATE erp_mes.\"start_time\" SET initial_time = '{initialTime}'"
+        self.send_query(query, None, False)
+        # else:
+        #     getTime_query = f"SELECT initial_time FROM erp_mes.\"start_time\""
+        #     initialTime = reset = self.send_query(getTime_query)[0][0]
         return initialTime
     
 
