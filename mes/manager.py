@@ -13,6 +13,7 @@ from mes import generateGrahps
 from mes import GenCin
 from mes import Recipe
 from mes import emoji, bcolors, CONSTANTS
+from mes import cur_pieces_top_wh, updatePiecesTopWh
 
 
 
@@ -141,6 +142,28 @@ class Manager():
         return [(order_id, list(recipes)) for order_id, recipes in groups]
 
 
+
+    def printSupplierOrders(self):
+        '''
+        Função que imprime as ordens de fornecedor
+
+        args:
+            None
+        return:
+            None
+        '''
+        if len(self.supplier_orders) == 0:
+            print(emoji.emojize(f'\n{bcolors.BOLD+bcolors.WARNING}[MES]{bcolors.ENDC+bcolors.ENDC}:warning:  No supplier orders available!'))
+            return
+        for order in self.supplier_orders:
+            print(f'\n{bcolors.BOLD}[MES]{bcolors.ENDC} Summary of {bcolors.UNDERLINE}supplier order{bcolors.ENDC} {bcolors.BOLD+bcolors.UNDERLINE+str(order.id)+bcolors.ENDC+bcolors.ENDC}:')
+            print(f"\t{bcolors.OKGREEN}->{bcolors.ENDC} Day: {order.day}")
+            print(f"\t{bcolors.OKGREEN}->{bcolors.ENDC} Quantity P1: {order.num_pieces[0]}")
+            print(f"\t{bcolors.OKGREEN}->{bcolors.ENDC} Quantity P2: {order.num_pieces[1]}")
+            print(f"\t{bcolors.OKGREEN}->{bcolors.ENDC} Current day: {self.clock.curr_day}")
+
+
+
     def printExpeditionOrders(self):
         '''
         Função que imprime as ordens de expedição
@@ -151,10 +174,10 @@ class Manager():
             None
         '''
         if len(self.deliveries) == 0:
-            print(f'\n{bcolors.BOLD}[MES]{bcolors.ENDC} No expedition orders available!')
+            print(emoji.emojize(f'\n{bcolors.BOLD+bcolors.WARNING}[MES]{bcolors.ENDC+bcolors.ENDC}:warning:  No expedition orders available!'))
             return
         for delivery in self.deliveries:
-            print(f'\n{bcolors.BOLD}[MES]{bcolors.ENDC} Summary of expedition order {bcolors.BOLD+bcolors.UNDERLINE+str(delivery.order_id)+bcolors.ENDC+bcolors.ENDC}:')
+            print(f'\n{bcolors.BOLD}[MES]{bcolors.ENDC} Summary of {bcolors.UNDERLINE}expedition order{bcolors.ENDC} {bcolors.BOLD+bcolors.UNDERLINE+str(delivery.order_id)+bcolors.ENDC+bcolors.ENDC}:')
             print(f"\t{bcolors.OKGREEN}->{bcolors.ENDC} Client ID: {delivery.client_id}")
             print(f"\t{bcolors.OKGREEN}->{bcolors.ENDC} Piece type: {delivery.target_piece}")
             print(f"\t{bcolors.OKGREEN}->{bcolors.ENDC} Quantity: {delivery.quantity}")
@@ -175,7 +198,7 @@ class Manager():
             None
         '''
         if len(self.orders) == 0:
-            print(f'\n{bcolors.BOLD}[MES]{bcolors.ENDC} No production orders available!')
+            print(emoji.emojize(f'\n{bcolors.BOLD+bcolors.WARNING}[MES]{bcolors.ENDC+bcolors.ENDC}:warning:  No production orders available!'))
             return
         for order in self.orders:
             print(f'\n{bcolors.BOLD}[MES]{bcolors.ENDC} Summary of production order {bcolors.BOLD+bcolors.UNDERLINE+str(order.order_id)+bcolors.ENDC+bcolors.ENDC}:')
@@ -197,12 +220,12 @@ class Manager():
         return:
             None
         '''
-        if(len(self.recipes) == 0):
-            print(emoji.emojize(f'\n{bcolors.BOLD+bcolors.WARNING}[MES]{bcolors.ENDC + bcolors.ENDC}:warning:  No recipes associated with production orders'))
+        if self.recipes.__len__() == 0:
+            print(emoji.emojize(f'\n{bcolors.BOLD+bcolors.WARNING}[MES]{bcolors.ENDC + bcolors.ENDC}:warning:  No recipes associated with production orders!'))
             return
         recipes_grouped = self.groupRecipes()
         for order_id, recipes in recipes_grouped:
-            print(f'\n{bcolors.BOLD}[MES]{bcolors.ENDC} Recipes associated with production order {bcolors.BOLD+bcolors.UNDERLINE+str(order_id)+bcolors.ENDC+bcolors.ENDC}:')
+            print(f'\n{bcolors.BOLD}[MES]{bcolors.ENDC} Recipes associated with {bcolors.UNDERLINE}production order{bcolors.ENDC} {bcolors.BOLD+bcolors.UNDERLINE+str(order_id)+bcolors.ENDC+bcolors.ENDC}:')
             for recipe in recipes:
                 print(f"\t{bcolors.OKGREEN}->{bcolors.ENDC} Recipe ID: {recipe.global_id if recipe.global_id is not None else '-':<5}", end="")
                 print(f"Machine ID: {recipe.machine_id if recipe.machine_id is not None else '-':<5}", end="")
@@ -226,36 +249,40 @@ class Manager():
         return:
             None
         '''
-        print(f'\n{bcolors.BOLD}[MES]{bcolors.ENDC} Recipes status (ID):')
-        # Determinar o número máximo de elementos em qualquer uma das listas
-        active_list = [x for x in self.active_recipes if x is not None]
-        active_list.sort(key=lambda x: x.global_id)
-        stashed_list = sorted(self.stashed_recipes, key=lambda x: x.global_id)
-        waiting_list = sorted(self.waiting_recipes, key=lambda x: x.global_id)
-        terminated_list = sorted(self.terminated_recipes, key=lambda x: x.global_id)
-        max_length = max(len(active_list), len(stashed_list), len(waiting_list), len(terminated_list))
+        if self.recipes.__len__() == 0:
+            print(emoji.emojize(f'\n{bcolors.BOLD+bcolors.WARNING}[MES]{bcolors.ENDC + bcolors.ENDC}:warning:  No recipes to display!'))
+            return
+        else:
+            print(f'\n{bcolors.BOLD}[MES]{bcolors.ENDC} Recipes status (ID):')
+            # Determinar o número máximo de elementos em qualquer uma das listas
+            active_list = [x for x in self.active_recipes if x is not None]
+            active_list.sort(key=lambda x: x.global_id)
+            stashed_list = sorted(self.stashed_recipes, key=lambda x: x.global_id)
+            waiting_list = sorted(self.waiting_recipes, key=lambda x: x.global_id)
+            terminated_list = sorted(self.terminated_recipes, key=lambda x: x.global_id)
+            max_length = max(len(active_list), len(stashed_list), len(waiting_list), len(terminated_list))
 
-        # Iterar sobre as listas simultaneamente
-        print(f"\t{bcolors.UNDERLINE}Active{bcolors.ENDC}    {bcolors.UNDERLINE}Stashed{bcolors.ENDC}   {bcolors.UNDERLINE}Waiting{bcolors.ENDC}   {bcolors.UNDERLINE}Terminated{bcolors.ENDC}")
-        for i in range(max_length):
-            # Verificar se há elementos válidos para imprimir nesta linha
-            has_elements = False
-            if i < len(active_list) and active_list[i] is not None:
-                has_elements = True
-            if i < len(stashed_list) and stashed_list[i] is not None:
-                has_elements = True
-            if i < len(waiting_list) and waiting_list[i] is not None:
-                has_elements = True
-            if i < len(terminated_list) and terminated_list[i] is not None:
-                has_elements = True
-            # Se houver elementos válidos, imprima esta linha
-            if has_elements:
-                active_index = active_list[i].global_id if i < len(active_list) and active_list[i] is not None else ''
-                stashed_index = stashed_list[i].global_id if i < len(stashed_list) else ''
-                waiting_index = waiting_list[i].global_id if i < len(waiting_list) else ''
-                terminated_index = terminated_list[i].global_id if i < len(terminated_list) else ''
+            # Iterar sobre as listas simultaneamente
+            print(f"\t{bcolors.UNDERLINE}Active{bcolors.ENDC}    {bcolors.UNDERLINE}Stashed{bcolors.ENDC}   {bcolors.UNDERLINE}Waiting{bcolors.ENDC}   {bcolors.UNDERLINE}Terminated{bcolors.ENDC}")
+            for i in range(max_length):
+                # Verificar se há elementos válidos para imprimir nesta linha
+                has_elements = False
+                if i < len(active_list) and active_list[i] is not None:
+                    has_elements = True
+                if i < len(stashed_list) and stashed_list[i] is not None:
+                    has_elements = True
+                if i < len(waiting_list) and waiting_list[i] is not None:
+                    has_elements = True
+                if i < len(terminated_list) and terminated_list[i] is not None:
+                    has_elements = True
+                # Se houver elementos válidos, imprima esta linha
+                if has_elements:
+                    active_index = active_list[i].global_id if i < len(active_list) and active_list[i] is not None else ''
+                    stashed_index = stashed_list[i].global_id if i < len(stashed_list) else ''
+                    waiting_index = waiting_list[i].global_id if i < len(waiting_list) else ''
+                    terminated_index = terminated_list[i].global_id if i < len(terminated_list) else ''
 
-                print(f"\t {active_index if active_index is not None else '':<10} {stashed_index if stashed_index is not None else '':<10} {waiting_index if waiting_index is not None else '':<10} {terminated_index if terminated_index is not None else '':<10}")
+                    print(f"\t {active_index if active_index is not None else '':<10} {stashed_index if stashed_index is not None else '':<10} {waiting_index if waiting_index is not None else '':<10} {terminated_index if terminated_index is not None else '':<10}")
 
 
 
@@ -272,7 +299,7 @@ class Manager():
         parsed_production_order = []
         parsed_production_order.append(production_order[0]) # order id
         parsed_production_order.append(production_order[1]) # client id
-        parsed_production_order.append(int(production_order[2])) # tipo de peça
+        parsed_production_order.append(int(production_order[2][1])) # tipo de peça
         parsed_production_order.append(production_order[3]) # quantidade
         parsed_production_order.append(production_order[4]) # data de inicio
         return parsed_production_order
@@ -292,7 +319,7 @@ class Manager():
         parsed_expedition_order = []
         parsed_expedition_order.append(expedition_order[0]) # order id
         parsed_expedition_order.append(expedition_order[1]) # client id
-        parsed_expedition_order.append(int(expedition_order[2])) # tipo de peça
+        parsed_expedition_order.append(int(expedition_order[2][1])) # tipo de peça
         parsed_expedition_order.append(expedition_order[3]) # quantidade
         parsed_expedition_order.append(expedition_order[4]) # data de expedição
         return parsed_expedition_order
@@ -497,7 +524,7 @@ class Manager():
                 self.updateRecipesWaiting("remove", recipe_to_check if status == "waiting" else None)
                 self.updateRecipesActive("add", free_recipe, recipe_to_check)
                 self.client.sendRecipe(self.active_recipes[free_recipe])
-                self.printAssociatedRecipes()
+                # self.printAssociatedRecipes()
                 self.printRecipesStatus()
                 
 
@@ -536,7 +563,7 @@ class Manager():
                 if order.quantity_done == order.quantity:
                     order.status = order.FINISHED
                     print(f'\n{bcolors.BOLD}[MES]{bcolors.ENDC} Updating status of Production Order {bcolors.UNDERLINE}{order.order_id}{bcolors.ENDC} in database...', end=" ", flush=True)
-                    if self.db.insert_production_status(order.order_id, self.clock.curr_day):
+                    if self.db.insert_production_status(order.order_id, self.clock.curr_day) == None:
                         # correu tudo ok. Remover ordem de produção da lista de ordens de produção e adicionar à lista de ordens completas
                         self.completed_orders.append(order)
                         self.orders.remove(order)
@@ -588,7 +615,7 @@ class Manager():
                         self.client.sendRecipe(recipe)
                     else:
                         recipe = result
-                        self.printAssociatedRecipes()
+                        # self.printAssociatedRecipes()
                         self.client.sendRecipe(recipe)
         # self.generateRecipes()
         return
@@ -689,10 +716,12 @@ class Manager():
             None
         '''
         if len(self.supplier_orders) > 0:
-            # receção de encomenda do fornecedor
-            self.cin.spawnPieces(self.supplier_orders[0].num_pieces)
-            self.completed_suplier_orders.append(self.supplier_orders[0])
-            self.supplier_orders.pop(0)
+            for order in self.supplier_orders:
+                if self.clock.curr_day >= order.day:
+                    # receção de encomenda do fornecedor
+                    self.cin.spawnPieces(self.supplier_orders[0].num_pieces)
+                    self.completed_suplier_orders.append(self.supplier_orders[0])
+                    self.supplier_orders.pop(0)
 
 
 
@@ -730,7 +759,7 @@ class Manager():
         
         # verificar produções do dia
         for order in self.orders:
-            if order.start_date == self.clock.curr_day and order.status == order.PENDING:
+            if self.clock.curr_day >= order.start_date and order.status == order.PENDING:
                 order.status = order.PRODUCING # passa a estado de produção e gera receitas
                 krecipes = len(self.recipes)
                 for i in range(order.quantity):
@@ -738,10 +767,11 @@ class Manager():
                     self.recipes.append(Recipe(order.order_id, recipe_index, order.target_piece))
                     self.updateRecipesWaiting("add", self.recipes[-1]) # adicionadas à fila de espera. Serão enviadas para produção assim que possível
             
-            self.printProductionOrders()
-            self.printExpeditionOrders()
-            self.printAssociatedRecipes()
-            self.printRecipesStatus()
+        self.printSupplierOrders()
+        self.printProductionOrders()
+        self.printExpeditionOrders()
+        self.printAssociatedRecipes()
+        self.printRecipesStatus()
         return
 
 
@@ -778,23 +808,37 @@ class Manager():
         '''
         # atualização da base de dados no final do dia para o stock de peças no armazém inferior
         if ((self.clock.curr_time_seconds >= 55) and
-            (self.clock.curr_time_seconds <= 59) and
             (not self.bottom_updated)):
+            updatePiecesTopWh(self.client)
             self.updatePiecesBottomWh()
-            self.db.insert_bottom_stock(self.clock.curr_day, cur_pieces_bottom_wh)
+            cur_pieces = {
+                1: cur_pieces_top_wh[1],
+                2: cur_pieces_top_wh[2],
+                3: cur_pieces_top_wh[3],
+                4: cur_pieces_top_wh[4],
+                5: cur_pieces_bottom_wh[5],
+                6: cur_pieces_bottom_wh[6],
+                7: cur_pieces_bottom_wh[7],
+                8: cur_pieces_top_wh[8],
+                9: cur_pieces_top_wh[9]
+            }
+            self.db.insert_stock(self.clock.curr_day, cur_pieces)
             self.bottom_updated = True
         # atualização da base de dados para o novo dia
-        if ((self.clock.curr_time_seconds >= 3) and
-            (self.clock.curr_time_seconds <= 5) and
+        if ((self.clock.curr_time_seconds >= 8) and
             (self.prev_day != self.clock.curr_day)):
             self.dailyUpdateFromDB()
             self.prev_day = self.clock.curr_day
             self.bottom_updated = False
-        if isinstance(self.active_recipes.index(None), int):
-            self.generateRecipes()
         # verifica se existem encomendas do fornecedor
         if len(self.supplier_orders) > 0:
             self.waitCompleteSupplierOrder()
+        # gera receitas
+        try:
+            self.active_recipes.index(None)
+            self.generateRecipes()
+        except ValueError:
+            pass
         # verifica se existem receitas ativas
         if any(self.active_recipes):
             self.waitSomeTransformation()
@@ -815,12 +859,12 @@ class Manager():
             except KeyboardInterrupt:
                 self.handle_exit()
                 self.client.clientDisconnect()
-                self.db.disconnect()
+                # self.db.disconnect()
                 sys.exit()
             except Exception as e:
                 self.handle_exit(traceback.format_exc())
                 self.client.clientDisconnect()
-                self.db.disconnect()
+                # self.db.disconnect()
                 sys.exit()
             # finally:
             #     self.client.clientDisconnect()
