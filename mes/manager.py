@@ -201,7 +201,7 @@ class Manager():
             print(emoji.emojize(f'\n{bcolors.BOLD+bcolors.WARNING}[MES]{bcolors.ENDC+bcolors.ENDC}:warning:  No production orders available!'))
             return
         for order in self.orders:
-            print(f'\n{bcolors.BOLD}[MES]{bcolors.ENDC} Summary of production order {bcolors.BOLD+bcolors.UNDERLINE+str(order.order_id)+bcolors.ENDC+bcolors.ENDC}:')
+            print(f'\n{bcolors.BOLD}[MES]{bcolors.ENDC} Summary of {bcolors.UNDERLINE}production order{bcolors.ENDC} {bcolors.BOLD+bcolors.UNDERLINE+str(order.order_id)+bcolors.ENDC+bcolors.ENDC}:')
             print(f"\t{bcolors.OKGREEN}->{bcolors.ENDC} Client ID: {order.client_id}")
             print(f"\t{bcolors.OKGREEN}->{bcolors.ENDC} Piece type: {order.target_piece}")
             print(f"\t{bcolors.OKGREEN}->{bcolors.ENDC} Quantity: {order.quantity}")
@@ -562,7 +562,7 @@ class Manager():
             if order.order_id == recipe.order_id:
                 if order.quantity_done == order.quantity:
                     order.status = order.FINISHED
-                    print(f'\n{bcolors.BOLD}[MES]{bcolors.ENDC} Updating status of Production Order {bcolors.UNDERLINE}{order.order_id}{bcolors.ENDC} in database...', end=" ", flush=True)
+                    print(f'\n{bcolors.BOLD+bcolors.OKBLUE}[MES]{bcolors.ENDC+bcolors.ENDC} Updating status of Production Order {bcolors.UNDERLINE}{order.order_id}{bcolors.ENDC} in database...', end=" ", flush=True)
                     if self.db.insert_production_status(order.order_id, self.clock.curr_day) == None:
                         # correu tudo ok. Remover ordem de produção da lista de ordens de produção e adicionar à lista de ordens completas
                         self.completed_orders.append(order)
