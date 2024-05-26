@@ -83,6 +83,7 @@ class Manager():
         self.last_supplier_order_id = 1
         self.supplier_orders = []
         self.completed_suplier_orders = []
+        self.carrier_occupied = [None]*4 # true se transportador ocupado, false se transportador livre
 
         # guarda as ordens de produção
         self.last_prod_order_id = 1
@@ -671,37 +672,92 @@ class Manager():
         return:
             None
         '''
-        if self.deliveries[0].status == self.deliveries[0].SENDING:
-            status_delivery = self.client.getDeliveryState(self.deliveries[0])
-            print("Print Status delivery: ", status_delivery)
-            if status_delivery:
-                print(emoji.emojize(f'\n{bcolors.BOLD+bcolors.OKGREEN}[MES]{bcolors.ENDC + bcolors.ENDC} :grinning_face_with_big_eyes:  Order {bcolors.UNDERLINE}{self.deliveries[0].order_id}{bcolors.ENDC} delivered successfully at {self.clock.get_time_pretty()}! :check_mark_button:'))
-                # # remover receitas associadas a esta ordem de produção
-                for recipe in self.recipes:
-                    if recipe.order_id == self.deliveries[0].order_id:
-                        self.updateRecipesTerminated("remove", recipe)
-                        self.recipes.remove(recipe)
-                # atualizar base de dados sobre estado da expedicão
-                self.db.expedition_production_status(self.deliveries[0].order_id, self.clock.curr_day)
-                # remover ordem de expedição e adicionar à lista de ordens completas
-                self.completed_deliveries.append(self.deliveries[0])
-                self.deliveries.pop(0)
-                return
+        for order in self.deliveries:
+            # verificar se os carriers estão todos ocupados antes de enviar expedition order
+            if order.status == order.PENDING and all(self.carrier_occupied):
+                pass
+            # verificar se dia de expedição corresponde ao atual
+            self.updatePiecesBottomWh()
+            if order.expedition_date > self.clock.curr_day:
+                pass
+            elif order.status == order.PENDING and cur_pieces_bottom_wh[order.target_piece] == order.quantity:
+                order.status = order.SENDING
+                # enviar order
+                print(emoji.emojize(f'\n{bcolors.BOLD}[MES]{bcolors.ENDC} :delivery_truck:  Sending order {bcolors.UNDERLINE}{order.order_id}{bcolors.ENDC}... :delivery_truck:'))
+            if order.status == order.SENDING:
+                # número de linhas de expedição que vai ocupar. Cada linha ocupa máximo 6 peças
+                carriers = (order.quantity - order.quantity_sent) // 6
+                last_pieces = (order.quantity - order.quantity_sent) % 6
+                if carriers != 0 or last_pieces != 0:
+                    for i in range(carriers+1): # 1 para entrar no ciclo caso carriers seja 0
+                        try:
+                            index = self.carrier_occupied.index(None) # buscar index livre
+                        except ValueError:
+                            break
+                        # verificar se número de peças da ordem de expedição existe no armazém
+                        self.updatePiecesBottomWh()
+                        if cur_pieces_bottom_wh[order.target_piece] != order.quantity:
+                            break
+                        if i == carriers: # última linha de expedição
+                            order.quantity_sent += last_pieces
+                            self.carrier_occupied[index] = order.order_id # ocupar carrier
+                            self.client.sendDelivery(index, order.target_piece, last_pieces) # enviar order
+                        else:
+                            self.carrier_occupied[index] = order.order_id # ocupar carrier
+                            self.client.sendDelivery(index, order.target_piece, 6) # enviar order
+                # buscar indíces dos transportadores que possuem a ordem de expedição
+                carriers_position = [index for index, value in enumerate(self.carrier_occupied) if value == order.order_id]
+                counter = 0
+                for position in carriers_position:
+                    if self.client.getDeliveryState(position):
+                        counter += 1
+                        self.carrier_occupied[position] = None
+                # se counter for igual ao carriers_position e a quantidade expedida for igual à quuantidade pretendida quer dizer que todas as linhas de expedição terminaram a entrega
+                if counter == len(carriers_position) and order.quantity == order.quantity_sent:
+                    order.status = order.DONE
+                    print(emoji.emojize(f'\n{bcolors.BOLD+bcolors.OKGREEN}[MES]{bcolors.ENDC + bcolors.ENDC} :grinning_face_with_big_eyes:  Order {bcolors.UNDERLINE}{order.order_id}{bcolors.ENDC} delivered successfully at {self.clock.get_time_pretty()}! :check_mark_button:'))
+                    # remover receitas associadas a esta ordem de produção
+                    for recipe in self.recipes:
+                        if recipe.order_id == order.order_id:
+                            self.updateRecipesTerminated("remove", recipe)
+                            self.recipes.remove(recipe)
+                    # atualizar base de dados sobre estado da expedicão
+                    self.db.expedition_production_status(order.order_id, self.clock.curr_day)
+                    # remover ordem de expedição e adicionar à lista de ordens completas
+                    self.completed_deliveries.append(order)
+                    self.deliveries.remove(order)
+                
+            
+        # if self.deliveries[0].status == self.deliveries[0].SENDING:
+        #     status_delivery = self.client.getDeliveryState(self.deliveries[0])
+        #     print("Print Status delivery: ", status_delivery)
+        #     if status_delivery:
+        #         print(emoji.emojize(f'\n{bcolors.BOLD+bcolors.OKGREEN}[MES]{bcolors.ENDC + bcolors.ENDC} :grinning_face_with_big_eyes:  Order {bcolors.UNDERLINE}{self.deliveries[0].order_id}{bcolors.ENDC} delivered successfully at {self.clock.get_time_pretty()}! :check_mark_button:'))
+        #         # # remover receitas associadas a esta ordem de produção
+        #         for recipe in self.recipes:
+        #             if recipe.order_id == self.deliveries[0].order_id:
+        #                 self.updateRecipesTerminated("remove", recipe)
+        #                 self.recipes.remove(recipe)
+        #         # atualizar base de dados sobre estado da expedicão
+        #         self.db.expedition_production_status(self.deliveries[0].order_id, self.clock.curr_day)
+        #         # remover ordem de expedição e adicionar à lista de ordens completas
+        #         self.completed_deliveries.append(self.deliveries[0])
+        #         self.deliveries.pop(0)
+        #         return
 
-        # verificar se dia de expedição corresponde ao atual
-        if self.deliveries[0].expedition_date > self.clock.curr_day:
-            return
+        # # verificar se dia de expedição corresponde ao atual
+        # if self.deliveries[0].expedition_date > self.clock.curr_day:
+        #     return
         # verificar se número de peças da ordem de expedição existe no armazém
-        self.updatePiecesBottomWh()
-        if cur_pieces_bottom_wh[self.deliveries[0].target_piece] != self.deliveries[0].quantity:
-            return
-        print("entrei")
-        # verificar expedições do dia
-        if self.deliveries[0].status == self.deliveries[0].PENDING: # enviar ordem de expedição
-            self.deliveries[0].status = self.deliveries[0].SENDING
-            # enviar order
-            print(emoji.emojize(f'\n{bcolors.BOLD}[MES]{bcolors.ENDC} :delivery_truck:  Sending order {bcolors.UNDERLINE}{self.deliveries[0].order_id}{bcolors.ENDC}... :delivery_truck:'))
-            self.client.sendDelivery(self.deliveries[0])
+        # self.updatePiecesBottomWh()
+        # if cur_pieces_bottom_wh[self.deliveries[0].target_piece] != self.deliveries[0].quantity:
+        #     return
+        # # verificar expedições do dia
+        # if self.deliveries[0].status == self.deliveries[0].PENDING: # enviar ordem de expedição
+        #     self.deliveries[0].status = self.deliveries[0].SENDING
+        #     # enviar order
+        #     print(emoji.emojize(f'\n{bcolors.BOLD}[MES]{bcolors.ENDC} :delivery_truck:  Sending order {bcolors.UNDERLINE}{self.deliveries[0].order_id}{bcolors.ENDC}... :delivery_truck:'))
+        #     self.client.sendDelivery(self.deliveries[0])
 
 
 

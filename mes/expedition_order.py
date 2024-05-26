@@ -21,6 +21,7 @@ class ExpeditionOrder():
         self.target_piece = expedition_order[2]
         self.quantity = expedition_order[3]
         self.expedition_date = expedition_order[4]
+        self.quantity_sent = 0
         self.status = self.PENDING
         '''
         - producing: ordem de expedição está sendo produzida

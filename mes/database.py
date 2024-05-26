@@ -43,7 +43,7 @@ class Database:
                 database=self.database
             )
         except psycopg2.Error as e:
-            print(f'\n{bcolors.BOLD+bcolors.FAIL}[Database]{bcolors.ENDC+bcolors.ENDC} Error connecting to the database!  :cross_mark:')
+            print(emoji.emojize(f'\n{bcolors.BOLD+bcolors.FAIL}[Database]{bcolors.ENDC+bcolors.ENDC} Error connecting to the database!  :cross_mark:'))
             print(e)
         
         return conn

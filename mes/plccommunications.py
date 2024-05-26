@@ -214,41 +214,43 @@ class PLCCommunication:
     
 
 
-    def sendDelivery(self, order: ExpeditionOrder):
+    def sendDelivery(self, carrier: int, piece_type: int, quantity: int):
         '''
         Função para enviar uma entrega para o PLC.
 
         args:
-            order (ExpeditionOrder): id da ordem.
+            carrier (int): id do transportador.
+            piece_type (int): tipo da peça.
+            quantity (int): quantidade de peças.
         return:
             None
         '''
-        piece_type_node = self.client.get_node(CONSTANTS["Delivery"]["NamespaceIndex"] + CONSTANTS["Delivery"]["PieceType"])
-        quantity_node = self.client.get_node(CONSTANTS["Delivery"]["NamespaceIndex"] + CONSTANTS["Delivery"]["Quantity"])
-        send_node = self.client.get_node(CONSTANTS["Delivery"]["NamespaceIndex"] + CONSTANTS["Delivery"]["Send"])
+        piece_type_node = self.client.get_node(CONSTANTS["Delivery"]["NamespaceIndex"] + "[" + str(carrier) + "]" + CONSTANTS["Delivery"]["PieceType"])
+        quantity_node = self.client.get_node(CONSTANTS["Delivery"]["NamespaceIndex"] + "[" + str(carrier)  + "]" + CONSTANTS["Delivery"]["Quantity"])
+        send_node = self.client.get_node(CONSTANTS["Delivery"]["NamespaceIndex"] + "[" + str(carrier)  + "]" + CONSTANTS["Delivery"]["Send"])
 
         time.sleep(self.time_to_sleep) # pequeno compasso de espera para o PLC se atualizar
-        self.setValueCheck(piece_type_node, order.target_piece, ua.VariantType.Int16)
-        self.setValueCheck(quantity_node, order.quantity, ua.VariantType.Int16)
+        self.setValueCheck(piece_type_node, piece_type, ua.VariantType.Int16)
+        self.setValueCheck(quantity_node, quantity, ua.VariantType.Int16)
         self.setValueCheck(send_node, True, ua.VariantType.Boolean)
         return
 
 
 
-    def getDeliveryState(self, order: ExpeditionOrder):
+    def getDeliveryState(self, carrier: int):
         '''
         Função para obter o estado de uma entrega. Se a entrega foi enviada
         procede a alterar o estado da order para DONE.
 
         args:
-            order (ExpeditionOrder): id da ordem.
+            carrier (int): id do transportador.
         return:
             True: se a entrega foi enviada.
             False: se a entrega não foi enviada.
         '''
         time.sleep(self.time_to_sleep) # pequeno compasso de espera para o PLC se atualizar
-        delivery_state = self.client.get_node(CONSTANTS["Delivery"]["NamespaceIndex"] + CONSTANTS["Delivery"]["Send"])
+        delivery_state = self.client.get_node(CONSTANTS["Delivery"]["NamespaceIndex"] + "[" + str(carrier)  + "]" + CONSTANTS["Delivery"]["Send"])
         if delivery_state.get_value() == False:
-            order.status = order.DONE
+            # order.status = order.DONE
             return True
         return False
