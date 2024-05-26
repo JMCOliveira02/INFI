@@ -90,10 +90,13 @@ class Manager():
         self.orders = []
         self.completed_orders = []
 
+        # self.orders.append(ProductionOrder([1, 1, 3, 2, 0]))
+
         # guarda as ordens de expedição
         self.last_exp_order_id = 1
         self.deliveries = []
         self.completed_deliveries = []
+        # self.deliveries.append(ExpeditionOrder([1, 1, 3, 2, 1]))
 
         # guarda as receitas associadas a cada ordem de produção
         self.recipes = []
@@ -618,47 +621,6 @@ class Manager():
                         recipe = result
                         # self.printAssociatedRecipes()
                         self.client.sendRecipe(recipe)
-        # self.generateRecipes()
-        return
-        
-
-
-    def waitCompleteProductionOrder(self):
-        '''
-        Função que verifica e faz o envio se a ordem de produção estiver completa
-
-        args:
-            None
-        return:
-            None
-        '''
-        if len(self.completed_orders) > 0: # uma ordem de produção terminou
-            # atualizar estado da ordem de produção na base de dados
-            print()
-
-        
-        if len(self.completed_orders) > 0: # uma ordem de produção terminou
-            ## OLHAR PARA A DATA DE ENTREGA ###########################################################################################################
-            ################################################################################################################
-            if self.completed_orders[0].status != self.completed_orders[0].SENDING:
-                self.completed_orders[0].status = self.completed_orders[0].SENDING
-                # enviar order
-                print(emoji.emojize(f'\n{bcolors.BOLD}[MES]{bcolors.ENDC} :delivery_truck:  Sending order {bcolors.UNDERLINE}{self.completed_orders[0].order_id}{bcolors.ENDC}... :delivery_truck:'))
-                self.client.sendDelivery(self.completed_orders[0])
-            else:
-                status_delivery = self.client.getDeliveryState(self.completed_orders[0])
-                if status_delivery:
-                    print(emoji.emojize(f'\n{bcolors.BOLD+bcolors.OKGREEN}[MES]{bcolors.ENDC + bcolors.ENDC} :grinning_face_with_big_eyes:  Order {bcolors.UNDERLINE}{self.completed_orders[0].order_id}{bcolors.ENDC} delivered successfully at {self.clock.get_time_pretty()}! :check_mark_button:'))
-                    # remover receitas associadas a esta ordem de produção
-                    for recipe in self.recipes:
-                        if recipe.order_id == self.completed_orders[0].order_id:
-                            self.updateRecipesTerminated("remove", recipe)
-                            self.recipes.remove(recipe)
-                    # remover ordem de produção
-                    self.orders.remove(self.completed_orders[0])
-                    # remover ordem de produção da lista de ordens completas
-                    self.completed_orders.pop(0)
-                    # self.printProductionOrders()
         return
           
 
@@ -672,15 +634,14 @@ class Manager():
         return:
             None
         '''
+        deliveries_to_remove = []
         for order in self.deliveries:
             # verificar se os carriers estão todos ocupados antes de enviar expedition order
             if order.status == order.PENDING and all(self.carrier_occupied):
-                pass
+                continue
             # verificar se dia de expedição corresponde ao atual
             self.updatePiecesBottomWh()
-            if order.expedition_date > self.clock.curr_day:
-                pass
-            elif order.status == order.PENDING and cur_pieces_bottom_wh[order.target_piece] == order.quantity:
+            if order.status == order.PENDING and cur_pieces_bottom_wh[order.target_piece] == order.quantity and order.expedition_date <= self.clock.curr_day:
                 order.status = order.SENDING
                 # enviar order
                 print(emoji.emojize(f'\n{bcolors.BOLD}[MES]{bcolors.ENDC} :delivery_truck:  Sending order {bcolors.UNDERLINE}{order.order_id}{bcolors.ENDC}... :delivery_truck:'))
@@ -717,7 +678,7 @@ class Manager():
                     order.status = order.DONE
                     print(emoji.emojize(f'\n{bcolors.BOLD+bcolors.OKGREEN}[MES]{bcolors.ENDC + bcolors.ENDC} :grinning_face_with_big_eyes:  Order {bcolors.UNDERLINE}{order.order_id}{bcolors.ENDC} delivered successfully at {self.clock.get_time_pretty()}! :check_mark_button:'))
                     # remover receitas associadas a esta ordem de produção
-                    for recipe in self.recipes:
+                    for recipe in self.recipes[:]:
                         if recipe.order_id == order.order_id:
                             self.updateRecipesTerminated("remove", recipe)
                             self.recipes.remove(recipe)
@@ -725,39 +686,10 @@ class Manager():
                     self.db.expedition_production_status(order.order_id, self.clock.curr_day)
                     # remover ordem de expedição e adicionar à lista de ordens completas
                     self.completed_deliveries.append(order)
-                    self.deliveries.remove(order)
-                
-            
-        # if self.deliveries[0].status == self.deliveries[0].SENDING:
-        #     status_delivery = self.client.getDeliveryState(self.deliveries[0])
-        #     print("Print Status delivery: ", status_delivery)
-        #     if status_delivery:
-        #         print(emoji.emojize(f'\n{bcolors.BOLD+bcolors.OKGREEN}[MES]{bcolors.ENDC + bcolors.ENDC} :grinning_face_with_big_eyes:  Order {bcolors.UNDERLINE}{self.deliveries[0].order_id}{bcolors.ENDC} delivered successfully at {self.clock.get_time_pretty()}! :check_mark_button:'))
-        #         # # remover receitas associadas a esta ordem de produção
-        #         for recipe in self.recipes:
-        #             if recipe.order_id == self.deliveries[0].order_id:
-        #                 self.updateRecipesTerminated("remove", recipe)
-        #                 self.recipes.remove(recipe)
-        #         # atualizar base de dados sobre estado da expedicão
-        #         self.db.expedition_production_status(self.deliveries[0].order_id, self.clock.curr_day)
-        #         # remover ordem de expedição e adicionar à lista de ordens completas
-        #         self.completed_deliveries.append(self.deliveries[0])
-        #         self.deliveries.pop(0)
-        #         return
-
-        # # verificar se dia de expedição corresponde ao atual
-        # if self.deliveries[0].expedition_date > self.clock.curr_day:
-        #     return
-        # verificar se número de peças da ordem de expedição existe no armazém
-        # self.updatePiecesBottomWh()
-        # if cur_pieces_bottom_wh[self.deliveries[0].target_piece] != self.deliveries[0].quantity:
-        #     return
-        # # verificar expedições do dia
-        # if self.deliveries[0].status == self.deliveries[0].PENDING: # enviar ordem de expedição
-        #     self.deliveries[0].status = self.deliveries[0].SENDING
-        #     # enviar order
-        #     print(emoji.emojize(f'\n{bcolors.BOLD}[MES]{bcolors.ENDC} :delivery_truck:  Sending order {bcolors.UNDERLINE}{self.deliveries[0].order_id}{bcolors.ENDC}... :delivery_truck:'))
-        #     self.client.sendDelivery(self.deliveries[0])
+                    deliveries_to_remove.append(order)
+                    # self.deliveries.remove(order)
+        for i in range(len(deliveries_to_remove)):
+            self.deliveries.remove(deliveries_to_remove[i])
 
 
 
@@ -772,12 +704,12 @@ class Manager():
             None
         '''
         if len(self.supplier_orders) > 0:
-            for order in self.supplier_orders:
+            for order in self.supplier_orders[:]:
                 if self.clock.curr_day >= order.day:
                     # receção de encomenda do fornecedor
-                    self.cin.spawnPieces(self.supplier_orders[0].num_pieces)
-                    self.completed_suplier_orders.append(self.supplier_orders[0])
-                    self.supplier_orders.pop(0)
+                    self.cin.spawnPieces(order.num_pieces)
+                    self.completed_suplier_orders.append(order)
+                    self.supplier_orders.remove(order)
 
 
 
@@ -807,7 +739,7 @@ class Manager():
             None
         '''
         # entre os segundos 2 e 5 de cada dia, requisitar à base de dados a cada segundo
-        print(f'\n{bcolors.BOLD}[MES]{bcolors.ENDC} Day: {self.clock.curr_day}')
+        print(f'\n{bcolors.BOLD}[MES]{bcolors.ENDC} {bcolors.OKCYAN}Day{bcolors.ENDC}: {self.clock.curr_day}')
         self.getProductionsOrders()
         self.getExpedictionOrders()
         self.getSupplierOrders()
@@ -842,9 +774,9 @@ class Manager():
         return:
             None
         '''
-        self.completed_orders.clear()
-        self.completed_deliveries.clear()
-        self.completed_suplier_orders.clear()
+        self.completed_orders = []
+        self.completed_deliveries = []
+        self.completed_suplier_orders = []
 
 
 
@@ -915,13 +847,8 @@ class Manager():
             except KeyboardInterrupt:
                 self.handle_exit()
                 self.client.clientDisconnect()
-                # self.db.disconnect()
                 sys.exit()
             except Exception as e:
                 self.handle_exit(traceback.format_exc())
                 self.client.clientDisconnect()
-                # self.db.disconnect()
                 sys.exit()
-            # finally:
-            #     self.client.clientDisconnect()
-            #     break
