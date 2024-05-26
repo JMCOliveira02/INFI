@@ -1,8 +1,8 @@
 # MES version
-mes_version: "v4.0.0"
+mes_version: "v4.1.0"
 
 # codesys version compatible
-codesys_version_compatible: "v2.6.2"
+codesys_version_compatible: "v2.7.0"
 
 # Cliente OPC-UA
 opcua_connection: "opc.tcp://127.0.0.1:4840"
