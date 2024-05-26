@@ -9,7 +9,7 @@ from mes import emoji, bcolors
 
 class Database:
 
-    conn = None  # Class variable to store the database connection
+    #conn = None  # Class variable to store the database connection
     
     def __init__(self):
         self.host="db.fe.up.pt"
@@ -33,7 +33,7 @@ class Database:
         #         print(e)
 
     def connect(self):
-        # conn = None
+        conn = None
         try:
             conn = psycopg2.connect(
                 host=self.host,
@@ -42,6 +42,8 @@ class Database:
                 password=self.password,
                 database=self.database
             )
+        except Exception as e:
+            print(e)
         except psycopg2.Error as e:
             print(emoji.emojize(f'\n{bcolors.BOLD+bcolors.FAIL}[Database]{bcolors.ENDC+bcolors.ENDC} Error connecting to the database!  :cross_mark:'))
             print(e)
@@ -78,7 +80,10 @@ class Database:
             The result of the query if fetch is True, otherwise None.
         '''
         try:
-            conn = self.connect()
+            while(True):
+                conn = self.connect()
+                if conn != None:
+                    break 
             cur = conn.cursor()
             cur.execute(query, (parameters))  # Use parameters directly here
 
