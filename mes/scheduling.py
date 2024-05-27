@@ -148,8 +148,8 @@ class Scheduling():
             tool_time = Ttool if cur_machine_tool[edge[3]['machine_id']] != edge[3]['tool'] else 0 # No PLC as máquinas não têm ID 0, mas sim de 1 a 12
             # tempo de manutenção (verificar estado da máquina)
             main_time = Tmain if cur_machine_state[edge[3]['machine_id']] == 3 else 0
-            # tempo de máquina atual (verificar se máquina está a operar)
-            if cur_machine_state[edge[3]['machine_id']] == 1:
+            # tempo de máquina atual (verificar se máquina está a operar em modo automático ou manual)
+            if cur_machine_state[edge[3]['machine_id']] == 1 or cur_machine_state[edge[3]['machine_id']] == 2:
                 machine_time = Tmachine
                 if edge[3]['machine_id'] % 2 == 0: # prioridade para as máquinas de índice par
                     busy_machines_even += 1

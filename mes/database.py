@@ -79,32 +79,27 @@ class Database:
         return:
             The result of the query if fetch is True, otherwise None.
         '''
-        try:
-            while(True):
+        while(True):
+            try:                
                 conn = self.connect()
-                if conn != None:
-                    break 
-            cur = conn.cursor()
-            cur.execute(query, (parameters))  # Use parameters directly here
+                        
+                cur = conn.cursor()
+                cur.execute(query, (parameters))  # Use parameters directly here
 
-            if fetch:
-                ans = cur.fetchall()
-            else:
+                if fetch:
+                    ans = cur.fetchall()
+                else:
+                    ans = None
+                conn.commit()
+                cur.close()
+                conn.close()
+                break
+            except psycopg2.Error as e:
+                print(f'\n{bcolors.BOLD+bcolors.FAIL}[Database]{bcolors.ENDC+bcolors.ENDC} Error executing query: ', end=" ", flush=True)
+                print(e)
+                # Rollback any changes made during the transaction
+                conn.rollback()
                 ans = None
-            conn.commit()
-            cur.close()
-            conn.close()
-        except psycopg2.Error as e:
-            print(f'\n{bcolors.BOLD+bcolors.FAIL}[Database]{bcolors.ENDC+bcolors.ENDC} Error executing query: ', end=" ", flush=True)
-            print(e)
-            # Rollback any changes made during the transaction
-            conn.rollback()
-            ans = None
-        # finally:
-        # # Close cursor (not necessary to close the connection)
-        #     conn.commit()
-        #     cur.close()
-        #     conn.close()
         return ans   
     
 

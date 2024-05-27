@@ -1,5 +1,5 @@
 # MES version
-mes_version: "v4.1.0"
+mes_version: "v4.1.1"
 
 # codesys version compatible
 codesys_version_compatible: "v2.7.0"

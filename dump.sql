@@ -212,6 +212,226 @@ ALTER SEQUENCE erp_mes.expedition_status_id_seq OWNED BY erp_mes.expedition_stat
 
 
 --
+-- Name: mes_active_recipes; Type: TABLE; Schema: erp_mes; Owner: infind202407
+--
+
+CREATE TABLE erp_mes.mes_active_recipes (
+    order_id integer,
+    global_id integer,
+    recipe_id integer,
+    machine_id integer,
+    piece_in integer,
+    piece_out integer,
+    target_piece integer,
+    tool integer,
+    "time" integer,
+    "end" boolean,
+    current_transformation integer[],
+    sended_date integer,
+    finished_date integer
+);
+
+
+ALTER TABLE erp_mes.mes_active_recipes OWNER TO infind202407;
+
+--
+-- Name: mes_carriers_occupied; Type: TABLE; Schema: erp_mes; Owner: infind202407
+--
+
+CREATE TABLE erp_mes.mes_carriers_occupied (
+    order_id integer
+);
+
+
+ALTER TABLE erp_mes.mes_carriers_occupied OWNER TO infind202407;
+
+--
+-- Name: mes_completed_deliveries; Type: TABLE; Schema: erp_mes; Owner: infind202407
+--
+
+CREATE TABLE erp_mes.mes_completed_deliveries (
+    order_id integer,
+    client_id integer,
+    target_piece integer,
+    quantity integer,
+    expedition_date integer,
+    quantity_sent integer,
+    status character varying(50)
+);
+
+
+ALTER TABLE erp_mes.mes_completed_deliveries OWNER TO infind202407;
+
+--
+-- Name: mes_completed_production_orders; Type: TABLE; Schema: erp_mes; Owner: infind202407
+--
+
+CREATE TABLE erp_mes.mes_completed_production_orders (
+    order_id integer,
+    client_id integer,
+    target_piece integer,
+    quantity integer,
+    start_date integer,
+    quantity_done integer,
+    status character varying(50)
+);
+
+
+ALTER TABLE erp_mes.mes_completed_production_orders OWNER TO infind202407;
+
+--
+-- Name: mes_completed_supply_orders; Type: TABLE; Schema: erp_mes; Owner: infind202407
+--
+
+CREATE TABLE erp_mes.mes_completed_supply_orders (
+    id integer,
+    day integer,
+    num_pieces integer
+);
+
+
+ALTER TABLE erp_mes.mes_completed_supply_orders OWNER TO infind202407;
+
+--
+-- Name: mes_deliveries; Type: TABLE; Schema: erp_mes; Owner: infind202407
+--
+
+CREATE TABLE erp_mes.mes_deliveries (
+    order_id integer,
+    client_id integer,
+    target_piece integer,
+    quantity integer,
+    expedition_date integer,
+    quantity_sent integer,
+    status character varying(50)
+);
+
+
+ALTER TABLE erp_mes.mes_deliveries OWNER TO infind202407;
+
+--
+-- Name: mes_production_orders; Type: TABLE; Schema: erp_mes; Owner: infind202407
+--
+
+CREATE TABLE erp_mes.mes_production_orders (
+    order_id integer,
+    client_id integer,
+    target_piece integer,
+    quantity integer,
+    start_date integer,
+    quantity_done integer,
+    status character varying(50)
+);
+
+
+ALTER TABLE erp_mes.mes_production_orders OWNER TO infind202407;
+
+--
+-- Name: mes_recipes; Type: TABLE; Schema: erp_mes; Owner: infind202407
+--
+
+CREATE TABLE erp_mes.mes_recipes (
+    order_id integer,
+    global_id integer,
+    recipe_id integer,
+    machine_id integer,
+    piece_in integer,
+    piece_out integer,
+    target_piece integer,
+    tool integer,
+    "time" integer,
+    "end" boolean,
+    current_transformation integer[],
+    sended_date integer,
+    finished_date integer
+);
+
+
+ALTER TABLE erp_mes.mes_recipes OWNER TO infind202407;
+
+--
+-- Name: mes_stashed_recipes; Type: TABLE; Schema: erp_mes; Owner: infind202407
+--
+
+CREATE TABLE erp_mes.mes_stashed_recipes (
+    order_id integer,
+    global_id integer,
+    recipe_id integer,
+    machine_id integer,
+    piece_in integer,
+    piece_out integer,
+    target_piece integer,
+    tool integer,
+    "time" integer,
+    "end" boolean,
+    current_transformation integer[],
+    sended_date integer,
+    finished_date integer
+);
+
+
+ALTER TABLE erp_mes.mes_stashed_recipes OWNER TO infind202407;
+
+--
+-- Name: mes_supply_orders; Type: TABLE; Schema: erp_mes; Owner: infind202407
+--
+
+CREATE TABLE erp_mes.mes_supply_orders (
+    id integer,
+    day integer,
+    num_pieces integer
+);
+
+
+ALTER TABLE erp_mes.mes_supply_orders OWNER TO infind202407;
+
+--
+-- Name: mes_terminated_recipes; Type: TABLE; Schema: erp_mes; Owner: infind202407
+--
+
+CREATE TABLE erp_mes.mes_terminated_recipes (
+    order_id integer,
+    global_id integer,
+    recipe_id integer,
+    machine_id integer,
+    piece_in integer,
+    piece_out integer,
+    target_piece integer,
+    tool integer,
+    "time" integer,
+    "end" boolean,
+    current_transformation integer[],
+    sended_date integer,
+    finished_date integer
+);
+
+
+ALTER TABLE erp_mes.mes_terminated_recipes OWNER TO infind202407;
+
+--
+-- Name: mes_waiting_recipes; Type: TABLE; Schema: erp_mes; Owner: infind202407
+--
+
+CREATE TABLE erp_mes.mes_waiting_recipes (
+    order_id integer,
+    global_id integer,
+    recipe_id integer,
+    machine_id integer,
+    piece_in integer,
+    piece_out integer,
+    target_piece integer,
+    tool integer,
+    "time" integer,
+    "end" boolean,
+    current_transformation integer[],
+    sended_date integer,
+    finished_date integer
+);
+
+
+ALTER TABLE erp_mes.mes_waiting_recipes OWNER TO infind202407;
+
+--
 -- Name: production_order; Type: TABLE; Schema: erp_mes; Owner: infind202407
 --
 
@@ -438,6 +658,7 @@ ALTER TABLE ONLY erp_mes.client_order ALTER COLUMN id SET DEFAULT nextval('erp_m
 --
 -- Name: delivery id; Type: DEFAULT; Schema: erp_mes; Owner: infind202407
 --
+
 ALTER TABLE ONLY erp_mes.delivery ALTER COLUMN id SET DEFAULT nextval('erp_mes.delivery_id_seq'::regclass);
 
 
@@ -521,6 +742,78 @@ ALTER TABLE ONLY erp_mes.supply_order ALTER COLUMN id SET DEFAULT nextval('erp_m
 
 
 --
+-- Data for Name: mes_active_recipes; Type: TABLE DATA; Schema: erp_mes; Owner: infind202407
+--
+
+
+
+--
+-- Data for Name: mes_carriers_occupied; Type: TABLE DATA; Schema: erp_mes; Owner: infind202407
+--
+
+
+
+--
+-- Data for Name: mes_completed_deliveries; Type: TABLE DATA; Schema: erp_mes; Owner: infind202407
+--
+
+
+
+--
+-- Data for Name: mes_completed_production_orders; Type: TABLE DATA; Schema: erp_mes; Owner: infind202407
+--
+
+
+
+--
+-- Data for Name: mes_completed_supply_orders; Type: TABLE DATA; Schema: erp_mes; Owner: infind202407
+--
+
+
+
+--
+-- Data for Name: mes_deliveries; Type: TABLE DATA; Schema: erp_mes; Owner: infind202407
+--
+
+
+
+--
+-- Data for Name: mes_production_orders; Type: TABLE DATA; Schema: erp_mes; Owner: infind202407
+--
+
+
+
+--
+-- Data for Name: mes_recipes; Type: TABLE DATA; Schema: erp_mes; Owner: infind202407
+--
+
+
+
+--
+-- Data for Name: mes_stashed_recipes; Type: TABLE DATA; Schema: erp_mes; Owner: infind202407
+--
+
+
+
+--
+-- Data for Name: mes_supply_orders; Type: TABLE DATA; Schema: erp_mes; Owner: infind202407
+--
+
+
+
+--
+-- Data for Name: mes_terminated_recipes; Type: TABLE DATA; Schema: erp_mes; Owner: infind202407
+--
+
+
+
+--
+-- Data for Name: mes_waiting_recipes; Type: TABLE DATA; Schema: erp_mes; Owner: infind202407
+--
+
+
+
+--
 -- Data for Name: production_order; Type: TABLE DATA; Schema: erp_mes; Owner: infind202407
 --
 
@@ -589,6 +882,13 @@ SELECT pg_catalog.setval('erp_mes.client_id_seq', 1, false);
 --
 
 SELECT pg_catalog.setval('erp_mes.client_order_id_seq', 1, false);
+
+
+--
+-- Name: delivery_id_seq; Type: SEQUENCE SET; Schema: erp_mes; Owner: infind202407
+--
+
+SELECT pg_catalog.setval('erp_mes.delivery_id_seq', 1, false);
 
 
 --

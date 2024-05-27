@@ -82,8 +82,8 @@ class Manager():
         # receção de encomendas do fornecedor
         self.last_supplier_order_id = 1
         self.supplier_orders = []
-        self.completed_suplier_orders = []
-        self.carrier_occupied = [None]*4 # true se transportador ocupado, false se transportador livre
+        self.completed_supplier_orders = []
+        self.carrier_occupied = [None]*4 # Guardar os id's das ordens de expedição que estão a ser transportadas pelos carriers. None se nenhum
 
         # guarda as ordens de produção
         self.last_prod_order_id = 1
@@ -562,7 +562,7 @@ class Manager():
         return:
             None
         '''
-        for order in self.orders:
+        for order in reversed(self.orders):
             if order.order_id == recipe.order_id:
                 if order.quantity_done == order.quantity:
                     order.status = order.FINISHED
@@ -592,7 +592,7 @@ class Manager():
         return:
             None
         '''
-        for recipe in self.active_recipes:
+        for recipe in reversed(self.active_recipes):
             if recipe is not None: # receita válida
                 self.client.getRecipeState(recipe) # obter o estado da receita
                 if recipe.end and recipe.piece_out == recipe.target_piece and recipe.piece_in != recipe.piece_out and recipe.machine_id != -1 and recipe.machine_id != -2: # enviar receita para armazém inferior
@@ -605,12 +605,12 @@ class Manager():
                     self.updateRecipesActive("remove", recipe.recipe_id, recipe)
                     self.updateRecipesTerminated("add", recipe)
                     self.checkOrderComplete(recipe)
-                    # self.printRecipesStatus()
+                    self.printRecipesStatus()
                 elif recipe.end and recipe.piece_in != recipe.target_piece and recipe.machine_id == -2: # receita terminou transformação intermédia e foi enviada para armazém superior
                     recipe.finished_date = self.clock.get_time()
                     self.updateRecipesActive("remove", recipe.recipe_id, recipe)
                     self.updateRecipesStash("add", recipe)
-                    # self.printRecipesStatus()
+                    self.printRecipesStatus()
                 elif recipe.end and recipe.piece_out != recipe.target_piece: # receita terminou transformação intermédia
                     recipe.finished_date = self.clock.get_time()
                     result = self.generateSingleRecipe(recipe)
@@ -619,7 +619,7 @@ class Manager():
                         self.client.sendRecipe(recipe)
                     else:
                         recipe = result
-                        # self.printAssociatedRecipes()
+                        self.printAssociatedRecipes()
                         self.client.sendRecipe(recipe)
         return
           
@@ -641,7 +641,7 @@ class Manager():
                 continue
             # verificar se dia de expedição corresponde ao atual
             self.updatePiecesBottomWh()
-            if order.status == order.PENDING and cur_pieces_bottom_wh[order.target_piece] == order.quantity and order.expedition_date <= self.clock.curr_day:
+            if order.status == order.PENDING and cur_pieces_bottom_wh[order.target_piece] >= order.quantity and order.expedition_date <= self.clock.curr_day:
                 order.status = order.SENDING
                 # enviar order
                 print(emoji.emojize(f'\n{bcolors.BOLD}[MES]{bcolors.ENDC} :delivery_truck:  Sending order {bcolors.UNDERLINE}{order.order_id}{bcolors.ENDC}... :delivery_truck:'))
@@ -656,14 +656,15 @@ class Manager():
                         except ValueError:
                             break
                         # verificar se número de peças da ordem de expedição existe no armazém
-                        self.updatePiecesBottomWh()
-                        if cur_pieces_bottom_wh[order.target_piece] != order.quantity:
-                            break
+                        # self.updatePiecesBottomWh()
+                        # if cur_pieces_bottom_wh[order.target_piece] != order.quantity:
+                        #     break
                         if i == carriers: # última linha de expedição
                             order.quantity_sent += last_pieces
                             self.carrier_occupied[index] = order.order_id # ocupar carrier
                             self.client.sendDelivery(index, order.target_piece, last_pieces) # enviar order
                         else:
+                            order.quantity_sent += 6
                             self.carrier_occupied[index] = order.order_id # ocupar carrier
                             self.client.sendDelivery(index, order.target_piece, 6) # enviar order
                 # buscar indíces dos transportadores que possuem a ordem de expedição
@@ -708,7 +709,7 @@ class Manager():
                 if self.clock.curr_day >= order.day:
                     # receção de encomenda do fornecedor
                     self.cin.spawnPieces(order.num_pieces)
-                    self.completed_suplier_orders.append(order)
+                    self.completed_supplier_orders.append(order)
                     self.supplier_orders.remove(order)
 
 
@@ -776,7 +777,7 @@ class Manager():
         '''
         self.completed_orders = []
         self.completed_deliveries = []
-        self.completed_suplier_orders = []
+        self.completed_supplier_orders = []
 
 
 
