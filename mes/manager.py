@@ -809,7 +809,7 @@ class Manager():
                 6: cur_pieces_bottom_wh[6],
                 7: cur_pieces_bottom_wh[7],
                 8: cur_pieces_top_wh[8],
-                9: cur_pieces_top_wh[9]
+                9: cur_pieces_bottom_wh[9]
             }
             self.db.insert_stock(self.clock.curr_day, cur_pieces)
             self.bottom_updated = True
