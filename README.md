@@ -9,7 +9,6 @@ MES layer of a high level management and control of a factory floor simulator. C
         ```
         pip install -r requirements.txt
         ```
-    - Provide the input and output path in **constants.yaml** file.
     - Run the MES using 
         ```
         python main.py
