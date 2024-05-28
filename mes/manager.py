@@ -510,23 +510,23 @@ class Manager():
         return:
             None
         '''
-        try:
-            free_recipe = self.active_recipes.index(None)
-        except ValueError:
-            return
-        
         # Definir a lista de receitas a serem verificadas
         recipes_to_check = self.stashed_recipes + self.waiting_recipes
 
-        # Verificar as receitas geradas e que não estão em produção
-        if len(recipes_to_check) > 0:
-            recipe_to_check = recipes_to_check[0]
-            status = "stashed" if recipe_to_check in self.stashed_recipes else "waiting"
-            recipe_to_check = self.schedule.schedule(self.clock, recipe_to_check, status, self.active_recipes, self.stashed_recipes)
-            if not isinstance(recipe_to_check, int):
-                self.updateRecipesStash("remove", recipe_to_check if status == "stashed" else None)
-                self.updateRecipesWaiting("remove", recipe_to_check if status == "waiting" else None)
-                self.updateRecipesActive("add", free_recipe, recipe_to_check)
+        for recipe in recipes_to_check:
+            try:
+                free_recipe = self.active_recipes.index(None)
+            except ValueError:
+                return
+
+            # Verificar as receitas geradas e que não estão em produção
+            # recipe_to_check = recipe
+            status = "stashed" if recipe in self.stashed_recipes else "waiting"
+            recipe = self.schedule.schedule(self.clock, recipe, status, self.active_recipes, self.stashed_recipes)
+            if not isinstance(recipe, int):
+                self.updateRecipesStash("remove", recipe if status == "stashed" else None)
+                self.updateRecipesWaiting("remove", recipe if status == "waiting" else None)
+                self.updateRecipesActive("add", free_recipe, recipe)
                 self.client.sendRecipe(self.active_recipes[free_recipe])
                 # self.printAssociatedRecipes()
                 self.printRecipesStatus()
@@ -645,6 +645,8 @@ class Manager():
                 order.status = order.SENDING
                 # enviar order
                 print(emoji.emojize(f'\n{bcolors.BOLD}[MES]{bcolors.ENDC} :delivery_truck:  Sending order {bcolors.UNDERLINE}{order.order_id}{bcolors.ENDC}... :delivery_truck:'))
+                print(f'\n\t{bcolors.BOLD+bcolors.OKGREEN}->{bcolors.ENDC+bcolors.ENDC} Type: {str(order.target_piece)}')
+                print(f'\n\t{bcolors.BOLD+bcolors.OKGREEN}->{bcolors.ENDC+bcolors.ENDC} Quantity: {str(order.quantity)}')
             if order.status == order.SENDING:
                 # número de linhas de expedição que vai ocupar. Cada linha ocupa máximo 6 peças
                 carriers = (order.quantity - order.quantity_sent) // 6
@@ -679,7 +681,7 @@ class Manager():
                     order.status = order.DONE
                     print(emoji.emojize(f'\n{bcolors.BOLD+bcolors.OKGREEN}[MES]{bcolors.ENDC + bcolors.ENDC} :grinning_face_with_big_eyes:  Order {bcolors.UNDERLINE}{order.order_id}{bcolors.ENDC} delivered successfully at {self.clock.get_time_pretty()}! :check_mark_button:'))
                     # remover receitas associadas a esta ordem de produção
-                    for recipe in self.recipes[:]:
+                    for recipe in reversed(self.recipes):
                         if recipe.order_id == order.order_id:
                             self.updateRecipesTerminated("remove", recipe)
                             self.recipes.remove(recipe)
@@ -724,7 +726,7 @@ class Manager():
             None
         '''
         for i, piece in enumerate(cur_pieces_bottom_wh):
-            cur_pieces_bottom_wh[piece] = self.client.getPieceBottomWH(i+1) # As peças não têm tipo 0, mas sim de 1 a 9
+            cur_pieces_bottom_wh[piece] = self.client.getPieceBottomWH(piece) # As peças não têm tipo 0, mas sim de 1 a 9
 
 
 
@@ -796,7 +798,7 @@ class Manager():
         Máquina de estados 
         '''
         # atualização da base de dados no final do dia para o stock de peças no armazém inferior
-        if ((self.clock.curr_time_seconds >= 55) and
+        if ((self.clock.curr_time_seconds >= 50) and
             (not self.bottom_updated)):
             updatePiecesTopWh(self.client)
             self.updatePiecesBottomWh()

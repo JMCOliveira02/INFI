@@ -95,7 +95,7 @@ def updatePiecesTopWh(client_opcua: PLCCommunication):
         None
     '''
     for i, piece in enumerate(cur_pieces_top_wh):
-        cur_pieces_top_wh[piece] = client_opcua.getPieceTopWH(i+1) # As peças não têm tipo 0, mas sim de 1 a 9
+        cur_pieces_top_wh[piece] = client_opcua.getPieceTopWH(piece) # As peças não têm tipo 0, mas sim de 1 a 9
 
 
 

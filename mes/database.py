@@ -100,6 +100,9 @@ class Database:
                 # Rollback any changes made during the transaction
                 conn.rollback()
                 ans = None
+            except Exception as e:
+                print(f'\n{bcolors.BOLD+bcolors.FAIL}[Database]{bcolors.ENDC+bcolors.ENDC} Error executing query: ', end=" ", flush=True)
+                print(e)
         return ans   
     
 
