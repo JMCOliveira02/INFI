@@ -602,6 +602,13 @@ class Manager():
                     self.client.sendRecipe(recipe)
                 elif recipe.end and recipe.piece_out == recipe.target_piece and recipe.piece_in == recipe.target_piece: # receita terminou todas as transformações
                     recipe.finished_date = self.clock.get_time()
+                    time = self.clock.diff_between_times(recipe.finished_date, recipe.sended_date)
+                    client_id = None
+                    for order in self.orders:
+                        if order.order_id == recipe.order_id:
+                            client_id = order.client_id
+                            break
+                    self.db.insert_piece_time(recipe, client_id, time)
                     self.updateRecipesActive("remove", recipe.recipe_id, recipe)
                     self.updateRecipesTerminated("add", recipe)
                     self.checkOrderComplete(recipe)
@@ -621,6 +628,7 @@ class Manager():
                         recipe = result
                         self.printAssociatedRecipes()
                         self.client.sendRecipe(recipe)
+                self.clock.update_time()
         return
           
 
