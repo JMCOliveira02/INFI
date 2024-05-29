@@ -308,7 +308,7 @@ class Database:
         Returns:
             None
         """
-        query = """INSERT INTO erp_mes.mes_active_recipes (order_id, global_id, recipe_id, machine_id, piece_in, piece_out, target_piece, tool, time, "end", current_transformation, sended_date, finished_date, inactive) 
+        query = """UPDATE erp_mes.mes_active_recipes SET (order_id, global_id, recipe_id, machine_id, piece_in, piece_out, target_piece, tool, time, "end", current_transformation, sended_date, finished_date, inactive) 
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"""
         parameters = (recipe.order_id, recipe.global_id, recipe.recipe_id, recipe.machine_id, recipe.piece_in, recipe.piece_out, recipe.target_piece, recipe.tool, recipe.time, recipe.end, [recipe.current_transformation[0], recipe.current_transformation[1]] if recipe.current_transformation != None else None, [recipe.sended_date[0], recipe.sended_date[1]] if recipe.sended_date != None else None, [recipe.finished_date[0], recipe.finished_date[1]] if recipe.finished_date != None else None, recipe.inactive)
         self.send_query(query, parameters, fetch=False)
@@ -915,7 +915,7 @@ class Database:
     
 
 
-    def get_terimanted_recipes(self):
+    def get_terminated_recipes(self):
         """
         Retrieves terminated recipes from the database.
 

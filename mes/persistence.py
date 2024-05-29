@@ -19,7 +19,7 @@ class Persistence:
 
 
     def getLastSupplierOrderIdFromDB(self):
-        return self.db.get_last_supplier_order_id()
+        return self.db.get_last_supplier_order_id() + 1
 
 
 
@@ -40,7 +40,7 @@ class Persistence:
 
 
     def getLastProductionOrderIdFromDB(self):
-        return self.db.get_last_production_order_id()
+        return self.db.get_last_production_order_id() + 1
 
 
 
@@ -48,7 +48,7 @@ class Persistence:
         orders_db = self.db.get_production_orders()
         orders_parsed = []
         for order in orders_db:
-            init = order[:5]
+            init = [order[0], order[1], order[2], order[3], order[4]]
             # init.append(order[0])
             # init.append(order[1])
             # init.append(order[2])
@@ -68,7 +68,7 @@ class Persistence:
 
 
     def getLastExpeditionOrderIdFromDB(self):
-        return self.db.get_last_expedition_order_id()
+        return self.db.get_last_expedition_order_id() + 1
 
 
 
@@ -76,7 +76,7 @@ class Persistence:
         deliveries_db = self.db.get_expedition_orders()
         deliveries_parsed = []
         for delivery in deliveries_db:
-            init = delivery[:5]
+            init = [delivery[0], delivery[1], delivery[2], delivery[3], delivery[4]]
             delivery_ = ExpeditionOrder(init) # order_id, client_id, target_piece, quantity, expedition_date
             delivery_.quantity_sent = delivery[5]
             delivery_.status = delivery[6]
@@ -93,8 +93,8 @@ class Persistence:
         recipes_db = self.db.get_recipes()
         recipes_parsed = []
         for recipe in recipes_db:
-            init = recipe[:2] + [recipe[6]]
-            recipe_ = Recipe(init) # order_id, global_id, target_piece
+            # init = [recipe[0], recipe[1], recipe[6]]
+            recipe_ = Recipe(recipe[0], recipe[1], recipe[6]) # order_id, global_id, target_piece
             recipe_.recipe_id = recipe[2]
             recipe_.machine_id = recipe[3]
             recipe_.piece_in = recipe[4]
@@ -102,9 +102,9 @@ class Persistence:
             recipe_.tool = recipe[7]
             recipe_.time = recipe[8]
             recipe_.end = recipe[9]
-            recipe_.current_transformation = (recipe[10][0], recipe[10][1])
-            recipe_.sended_date = (recipe[11][0], recipe[11][1])
-            recipe_.finished_date = (recipe[12][0], recipe[12][1])
+            recipe_.current_transformation = (recipe[10][0], recipe[10][1]) if recipe[10] else None
+            recipe_.sended_date = (recipe[11][0], recipe[11][1]) if recipe[11] else None
+            recipe_.finished_date = (recipe[12][0], recipe[12][1]) if recipe[12] else None
             recipe_.inactive = recipe[13]
             recipes_parsed.append(recipe_)
         return recipes_parsed
@@ -115,8 +115,8 @@ class Persistence:
         recipes_db = self.db.get_active_recipes()
         recipes_db_parsed = []
         for recipe in recipes_db:
-            init = recipe[:2] + [recipe[6]]
-            recipe_ = Recipe(init) # order_id, global_id, target_piece
+            # init = [recipe[0], recipe[1], recipe[6]]
+            recipe_ = Recipe(recipe[0], recipe[1], recipe[6]) # order_id, global_id, target_piece
             recipe_.recipe_id = recipe[2]
             recipe_.machine_id = recipe[3]
             recipe_.piece_in = recipe[4]
@@ -124,12 +124,12 @@ class Persistence:
             recipe_.tool = recipe[7]
             recipe_.time = recipe[8]
             recipe_.end = recipe[9]
-            recipe_.current_transformation = (recipe[10][0], recipe[10][1])
-            recipe_.sended_date = (recipe[11][0], recipe[11][1])
-            recipe_.finished_date = (recipe[12][0], recipe[12][1])
+            recipe_.current_transformation = (recipe[10][0], recipe[10][1]) if recipe[10] else None
+            recipe_.sended_date = (recipe[11][0], recipe[11][1]) if recipe[11] else None
+            recipe_.finished_date = (recipe[12][0], recipe[12][1]) if recipe[12] else None
             recipe_.inactive = recipe[13]
             recipes_db_parsed.append(recipe_)
-        return recipes_db_parsed
+        return recipes_db_parsed.sort(key=lambda x: x.recipe_id)
 
 
 
@@ -137,8 +137,8 @@ class Persistence:
         recipes_db = self.db.get_stashed_recipes()
         recipes_db_parsed = []
         for recipe in recipes_db:
-            init = recipe[:2] + [recipe[6]]
-            recipe_ = Recipe(init) # order_id, global_id, target_piece
+            # init = [recipe[0], recipe[1], recipe[6]]
+            recipe_ = Recipe(recipe[0], recipe[1], recipe[6]) # order_id, global_id, target_piece
             recipe_.recipe_id = recipe[2]
             recipe_.machine_id = recipe[3]
             recipe_.piece_in = recipe[4]
@@ -146,9 +146,9 @@ class Persistence:
             recipe_.tool = recipe[7]
             recipe_.time = recipe[8]
             recipe_.end = recipe[9]
-            recipe_.current_transformation = (recipe[10][0], recipe[10][1])
-            recipe_.sended_date = (recipe[11][0], recipe[11][1])
-            recipe_.finished_date = (recipe[12][0], recipe[12][1])
+            recipe_.current_transformation = (recipe[10][0], recipe[10][1]) if recipe[10] else None
+            recipe_.sended_date = (recipe[11][0], recipe[11][1]) if recipe[11] else None
+            recipe_.finished_date = (recipe[12][0], recipe[12][1]) if recipe[12] else None
             recipe_.inactive = recipe[13]
             recipes_db_parsed.append(recipe_)
         return recipes_db_parsed
@@ -159,8 +159,8 @@ class Persistence:
         recipes_db = self.db.get_waiting_recipes()
         recipes_db_parsed = []
         for recipe in recipes_db:
-            init = recipe[:2] + [recipe[6]]
-            recipe_ = Recipe(init) # order_id, global_id, target_piece
+            # init = [recipe[0], recipe[1], recipe[6]]
+            recipe_ = Recipe(recipe[0], recipe[1], recipe[6]) # order_id, global_id, target_piece
             recipe_.recipe_id = recipe[2]
             recipe_.machine_id = recipe[3]
             recipe_.piece_in = recipe[4]
@@ -168,9 +168,9 @@ class Persistence:
             recipe_.tool = recipe[7]
             recipe_.time = recipe[8]
             recipe_.end = recipe[9]
-            recipe_.current_transformation = (recipe[10][0], recipe[10][1])
-            recipe_.sended_date = (recipe[11][0], recipe[11][1])
-            recipe_.finished_date = (recipe[12][0], recipe[12][1])
+            recipe_.current_transformation = (recipe[10][0], recipe[10][1]) if recipe[10] else None
+            recipe_.sended_date = (recipe[11][0], recipe[11][1]) if recipe[11] else None
+            recipe_.finished_date = (recipe[12][0], recipe[12][1]) if recipe[12] else None
             recipe_.inactive = recipe[13]
             recipes_db_parsed.append(recipe_)
         return recipes_db_parsed
@@ -181,8 +181,8 @@ class Persistence:
         recipes_db = self.db.get_terminated_recipes()
         recipes_db_parsed = []
         for recipe in recipes_db:
-            init = recipe[:2] + [recipe[6]]
-            recipe_ = Recipe(init) # order_id, global_id, target_piece
+            # init = [recipe[0], recipe[1], recipe[6]]
+            recipe_ = Recipe(recipe[0], recipe[1], recipe[6]) # order_id, global_id, target_piece
             recipe_.recipe_id = recipe[2]
             recipe_.machine_id = recipe[3]
             recipe_.piece_in = recipe[4]
@@ -190,9 +190,9 @@ class Persistence:
             recipe_.tool = recipe[7]
             recipe_.time = recipe[8]
             recipe_.end = recipe[9]
-            recipe_.current_transformation = (recipe[10][0], recipe[10][1])
-            recipe_.sended_date = (recipe[11][0], recipe[11][1])
-            recipe_.finished_date = (recipe[12][0], recipe[12][1])
+            recipe_.current_transformation = (recipe[10][0], recipe[10][1]) if recipe[10] else None
+            recipe_.sended_date = (recipe[11][0], recipe[11][1]) if recipe[11] else None
+            recipe_.finished_date = (recipe[12][0], recipe[12][1]) if recipe[12] else None
             recipe_.inactive = recipe[13]
             recipes_db_parsed.append(recipe_)
         return recipes_db_parsed
