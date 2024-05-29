@@ -2,6 +2,7 @@ from mes import datetime
 
 from mes import psycopg2
 
+from mes import Recipe
 from mes import emoji, bcolors
 
 
@@ -271,3 +272,19 @@ class Database:
         parameters = (id,)
         return self.send_query(query,(parameters))
 
+
+
+    def insert_piece_time(self, recipe: Recipe, client_id: int, total_time: int):
+            """
+            Updates the piece time in the database.
+
+            Args:
+                recipe (Recipe): The recipe to update.
+
+            Returns:
+                None
+            """
+            query = """INSERT INTO erp_mes.piece_info (client_order_id, piece, total_time)
+            VALUES (%s, %s, %s)"""
+            parameters = [client_id, 'P'+str(recipe.target_piece), total_time]
+            self.send_query(query, parameters, fetch=False)
