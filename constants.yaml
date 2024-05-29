@@ -51,6 +51,7 @@ Recipes:
   PieceIn: ".piece_in"
   Time: ".time_"
   Tool: ".tool"
+  Inactive: ".inactive"
 
 # Envio de peças (encomenda)
 Delivery:
