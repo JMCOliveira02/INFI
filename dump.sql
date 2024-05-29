@@ -432,6 +432,19 @@ CREATE TABLE erp_mes.mes_waiting_recipes (
 ALTER TABLE erp_mes.mes_waiting_recipes OWNER TO infind202407;
 
 --
+-- Name: piece_info; Type: TABLE; Schema: erp_mes; Owner: infind202407
+--
+
+CREATE TABLE erp_mes.piece_info (
+    client_order_id integer,
+    piece character varying(50),
+    total_time integer
+);
+
+
+ALTER TABLE erp_mes.piece_info OWNER TO infind202407;
+
+--
 -- Name: production_order; Type: TABLE; Schema: erp_mes; Owner: infind202407
 --
 
@@ -467,6 +480,20 @@ ALTER TABLE erp_mes.production_order_id_seq OWNER TO infind202407;
 
 ALTER SEQUENCE erp_mes.production_order_id_seq OWNED BY erp_mes.production_order.id;
 
+
+--
+-- Name: production_raw_material; Type: TABLE; Schema: erp_mes; Owner: infind202407
+--
+
+CREATE TABLE erp_mes.production_raw_material (
+    client_order_id integer,
+    piece character varying(50) NOT NULL,
+    quantity integer NOT NULL,
+    start_date integer NOT NULL
+);
+
+
+ALTER TABLE erp_mes.production_raw_material OWNER TO infind202407;
 
 --
 -- Name: production_status; Type: TABLE; Schema: erp_mes; Owner: infind202407
@@ -626,6 +653,23 @@ ALTER TABLE erp_mes.supply_order_id_seq OWNER TO infind202407;
 
 ALTER SEQUENCE erp_mes.supply_order_id_seq OWNED BY erp_mes.supply_order.id;
 
+
+--
+-- Name: total_costs; Type: TABLE; Schema: erp_mes; Owner: infind202407
+--
+
+CREATE TABLE erp_mes.total_costs (
+    client_order_id integer,
+    piece character varying,
+    quantity integer,
+    depreciation_days integer,
+    raw_material_cost integer,
+    depreciation_cost integer,
+    production_cost integer
+);
+
+
+ALTER TABLE erp_mes.total_costs OWNER TO infind202407;
 
 --
 -- Name: transformations; Type: TABLE; Schema: erp_mes; Owner: infind202407
@@ -814,7 +858,19 @@ ALTER TABLE ONLY erp_mes.supply_order ALTER COLUMN id SET DEFAULT nextval('erp_m
 
 
 --
+-- Data for Name: piece_info; Type: TABLE DATA; Schema: erp_mes; Owner: infind202407
+--
+
+
+
+--
 -- Data for Name: production_order; Type: TABLE DATA; Schema: erp_mes; Owner: infind202407
+--
+
+
+
+--
+-- Data for Name: production_raw_material; Type: TABLE DATA; Schema: erp_mes; Owner: infind202407
 --
 
 
@@ -851,6 +907,12 @@ INSERT INTO erp_mes.supplier VALUES (6, 'SupplierC', 'P2', 4, 18, 1);
 
 --
 -- Data for Name: supply_order; Type: TABLE DATA; Schema: erp_mes; Owner: infind202407
+--
+
+
+
+--
+-- Data for Name: total_costs; Type: TABLE DATA; Schema: erp_mes; Owner: infind202407
 --
 
 
