@@ -95,7 +95,7 @@ def updatePiecesTopWh(client_opcua: PLCCommunication):
         None
     '''
     for i, piece in enumerate(cur_pieces_top_wh):
-        cur_pieces_top_wh[piece] = client_opcua.getPieceTopWH(piece) # As peças não têm tipo 0, mas sim de 1 a 9
+        cur_pieces_top_wh[piece] = client_opcua.getPieceTopWH(i+1) # As peças não têm tipo 0, mas sim de 1 a 9
 
 
 
@@ -261,7 +261,11 @@ class Scheduling():
             else:
                 transform = [recipe.piece_in, recipe.piece_out] # caso a receita esteja stashed, a transformação é a mesma da receita (calculada antes de ficar stashed)
         elif status == "active":
-            nodes, edges = findSimpleTransformations(self.G_simple, recipe.target_piece, recipe.piece_out)
+            recipe.inactive = self.client.getInactiveState(recipe)
+            if recipe.inactive:
+                nodes, edges = findSimpleTransformations(self.G_simple, recipe.target_piece, recipe.piece_in)
+            else:
+                nodes, edges = findSimpleTransformations(self.G_simple, recipe.target_piece, recipe.piece_out)
             recipe.piece_in = nodes[0][0] # caso não encontre máquina, receita enviada para o plc fica em stash. Por isso, é necessário enviar a piece_in correta
             recipe.piece_out = nodes[0][1]
             recipe.tool = 0
@@ -295,6 +299,7 @@ class Scheduling():
         recipe.tool = edge_[3]['tool']
         recipe.time = edge_[3]['time']
         recipe.end = False
+        recipe.inactive = False
         recipe.current_transformation = (edge_[0], edge_[1])
         end_time_prediction = (recipe.time + (Ttool if recipe.tool != cur_machine_tool[recipe.machine_id] else 0)) / 1000 # tempo de transformação + tempo de mudança de ferramenta se ferramenta a utilizar for diferente da atual
         recipe.finished_date = clock.add_seconds(recipe.sended_date, clock.diff_between_times(recipe.finished_date, recipe.sended_date) + end_time_prediction)

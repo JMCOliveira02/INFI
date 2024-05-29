@@ -13,6 +13,7 @@ class Recipe():
         self.target_piece = target_piece # peça a produzir
         self.tool = None # preenchido pelo escalonamento
         self.time = None # preenchido pelo escalonamento
+        self.inactive = False # se True, PLC não conclui transformação devido a máquina ficar inativa
         self.end = False # indica se a receita foi terminada pelo PLC
         self.current_transformation = None # indica a transformação atual. Por exemplo, para uma target_piece=3, a primeira transformação é 1->2, a segunda 2->3. Preenchido pelo escalonamento
         #self.in_production = False # indica se a receita está em produção, ou seja, que foi lançada para o shopfloor

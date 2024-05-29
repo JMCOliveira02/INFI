@@ -188,6 +188,7 @@ class PLCCommunication:
         tool_node = self.client.get_node(CONSTANTS["Recipes"]["NamespaceIndex"] + "[" + str(recipe.recipe_id) +"]" + CONSTANTS["Recipes"]["Tool"])
         time_node = self.client.get_node(CONSTANTS["Recipes"]["NamespaceIndex"] + "[" + str(recipe.recipe_id) + "]" + CONSTANTS["Recipes"]["Time"])
         end_node = self.client.get_node(CONSTANTS["Recipes"]["NamespaceIndex"] + "[" + str(recipe.recipe_id) + "]" + CONSTANTS["Recipes"]["End"])
+        inactive_node = self.client.get_node(CONSTANTS["Recipes"]["NamespaceIndex"] + "[" + str(recipe.recipe_id) + "]" + CONSTANTS["Recipes"]["Inactive"])
 
         time.sleep(self.time_to_sleep) # pequeno compasso de espera para o PLC se atualizar
         self.setValueCheck(machine_id_node, recipe.machine_id, ua.VariantType.Int16)
@@ -195,8 +196,24 @@ class PLCCommunication:
         self.setValueCheck(tool_node, recipe.tool, ua.VariantType.Int16)
         self.setValueCheck(time_node, recipe.time, ua.VariantType.UInt32)
         self.setValueCheck(end_node, recipe.end, ua.VariantType.Boolean)
+        self.setValueCheck(inactive_node, recipe.inactive, ua.VariantType.Boolean)
         return
     
+
+
+    def getInactiveState(self, recipe: Recipe):
+        '''
+        Função para obter o estado de uma receita inativa.
+
+        args:
+            recipe (Recipe): receita.
+        return:
+            recipe (Recipe): receita atualizada.
+        '''
+        inactive_node = self.client.get_node(CONSTANTS["Recipes"]["NamespaceIndex"] + "[" + str(recipe.recipe_id) + "]" + CONSTANTS["Recipes"]["Inactive"])
+        recipe.inactive = inactive_node.get_value()
+        return
+
 
 
     def getRecipeState(self, recipe: Recipe):
