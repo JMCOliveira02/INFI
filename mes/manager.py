@@ -6,7 +6,8 @@ from mes import Database
 from mes import Clock
 from mes import ProductionOrder
 from mes import ExpeditionOrder
-from mes import Suplier
+from mes import Supplier
+from mes import Persistence
 from mes import Scheduling
 from mes import PLCCommunication
 from mes import generateGrahps
@@ -106,6 +107,26 @@ class Manager():
         self.stashed_recipes = [] # receitas que foram geraestás das, mas por motivo de otimização encontram-se paradas nos armazéns. recipe_id = None, in_production = false, piece_in != None, end = True
         self.waiting_recipes = [] # receitas que estão à espera de serem geradas. recipe_id = None, piece_in = None
         self.terminated_recipes = [] # receitas que terminaram todas as transformações. recipe_id = None, in_production = false, piece_in = target_piece, end = True
+
+        # Carregar informação da base de dados
+        if self.clock.curr_day == 0:
+            return
+        self.persistence = Persistence(self.db)
+        print(f'\n{bcolors.BOLD}[MES]{bcolors.ENDC} Loading data from database...', end=" ", flush=True)
+        self.last_supplier_order_id = self.persistence.getLastSupplierOrderIdFromDB()
+        self.supplier_orders = self.persistence.getSupplierOrdersFromDB()
+        self.carrier_occupied = self.persistence.getCarriersOccupiedFromDB()
+        self.last_prod_order_id = self.persistence.getLastProductionOrderIdFromDB()
+        self.orders = self.persistence.getOrdersFromDB()
+        self.last_exp_order_id = self.persistence.getLastExpeditionOrderIdFromDB()
+        self.deliveries = self.persistence.getDeliveriesFromDB()
+        self.recipes = self.persistence.getRecipesFromDB()
+        self.active_recipes = self.persistence.getActiveRecipesFromDB()
+        self.stashed_recipes = self.persistence.getStashedRecipesFromDB()
+        self.waiting_recipes = self.persistence.getWaitingRecipesFromDB()
+        self.terminated_recipes = self.persistence.getTerminatedRecipesFromDB()
+        print(f'{bcolors.OKGREEN}ok{bcolors.ENDC}')
+        
 
 
 
@@ -359,6 +380,7 @@ class Manager():
         production_orders = self.db.get_production_order_by_id(self.last_prod_order_id)
         for production_order in production_orders:
             production_order = self.parseProductionOrder(production_order)
+            self.db.insert_production_order(ProductionOrder(production_order))
             self.orders.append(ProductionOrder(production_order))
             self.last_prod_order_id += 1
 
@@ -374,6 +396,7 @@ class Manager():
         expedition_orders = self.db.get_expedition_order_by_id(self.last_exp_order_id)
         for expedition_order in expedition_orders:
             expedition_order = self.parseExpeditionOrder(expedition_order)
+            self.db.insert_expedition_order(ExpeditionOrder(expedition_order))
             self.deliveries.append(ExpeditionOrder(expedition_order))
             self.last_exp_order_id += 1
         return
@@ -390,7 +413,8 @@ class Manager():
         supplier_orders = self.db.get_supply_orders_by_id(self.last_supplier_order_id)
         for supplier_order in supplier_orders:
             supplier_order = self.parseSupplierOrder(supplier_order)
-            self.supplier_orders.append(Suplier(supplier_order[0], supplier_order[1], supplier_order[2]))
+            self.db.insert_supply_order(Supplier(supplier_order[0], supplier_order[1], supplier_order[2]))
+            self.supplier_orders.append(Supplier(supplier_order[0], supplier_order[1], supplier_order[2]))
             self.last_supplier_order_id += 1
         return
 
@@ -431,6 +455,7 @@ class Manager():
         if operation == "add" and recipe_id is not None and isinstance(recipe, Recipe):
             self.active_recipes[recipe_id] = recipe
             recipe.recipe_id = recipe_id
+            self.db.insert_active_recipe(recipe)
             # for order in self.orders:
             #     if order.order_id == recipe.order_id:
             #         order.status = order.PRODUCING
@@ -438,6 +463,7 @@ class Manager():
         elif operation == "remove" and recipe_id is not None and isinstance(recipe, Recipe):
             self.active_recipes[recipe_id] = None
             recipe.recipe_id = None
+            self.db.remove_active_recipe(recipe)
 
 
 
@@ -453,8 +479,10 @@ class Manager():
         '''
         if operation == "add" and isinstance(recipe, Recipe):
             self.stashed_recipes.append(recipe)
+            self.db.insert_stashed_recipe(recipe)
         elif operation == "remove" and isinstance(recipe, Recipe):
             self.stashed_recipes.remove(recipe)
+            self.db.remove_stashed_recipe(recipe)
 
 
 
@@ -471,8 +499,10 @@ class Manager():
         '''
         if operation == "add" and isinstance(recipe, Recipe):
             self.waiting_recipes.append(recipe)
+            self.db.insert_waiting_recipe(recipe)
         elif operation == "remove" and isinstance(recipe, Recipe):
             self.waiting_recipes.remove(recipe)
+            self.db.remove_waiting_recipe(recipe)
 
 
 
@@ -493,8 +523,10 @@ class Manager():
                 if order.order_id == recipe.order_id:
                     order.quantity_done += 1
                     break
+            self.db.insert_terminated_recipe(recipe)
         elif operation == "remove" and isinstance(recipe, Recipe):
             self.terminated_recipes.remove(recipe)
+            self.db.remove_terminated_recipe(recipe)
 
 
     
@@ -528,8 +560,10 @@ class Manager():
                 self.updateRecipesWaiting("remove", recipe if status == "waiting" else None)
                 self.updateRecipesActive("add", free_recipe, recipe)
                 self.client.sendRecipe(self.active_recipes[free_recipe])
+                self.db.insert_recipe(recipe)
                 # self.printAssociatedRecipes()
                 self.printRecipesStatus()
+                self.clock.update_time()
                 
 
 
@@ -547,6 +581,7 @@ class Manager():
         schedule = self.schedule.schedule(self.clock, recipe, "active", self.active_recipes, self.stashed_recipes) # tentar primeiro máquinas pares
         if isinstance(schedule, int):
             return -1
+        self.clock.update_time()
         return schedule
 
 
@@ -569,6 +604,8 @@ class Manager():
                     print(f'\n{bcolors.BOLD+bcolors.OKBLUE}[MES]{bcolors.ENDC+bcolors.ENDC} Updating status of Production Order {bcolors.UNDERLINE}{order.order_id}{bcolors.ENDC} in database...', end=" ", flush=True)
                     if self.db.insert_production_status(order.order_id, self.clock.curr_day) == None:
                         # correu tudo ok. Remover ordem de produção da lista de ordens de produção e adicionar à lista de ordens completas
+                        self.db.insert_completed_production_order(order)
+                        self.db.remove_production_order(order)
                         self.completed_orders.append(order)
                         self.orders.remove(order)
                         print(emoji.emojize(f'{bcolors.OKGREEN}ok{bcolors.ENDC}'))
@@ -600,8 +637,16 @@ class Manager():
                     recipe.piece_in = recipe.piece_out
                     recipe.end = False
                     self.client.sendRecipe(recipe)
+                    self.db.update_recipe(recipe)
                 elif recipe.end and recipe.piece_out == recipe.target_piece and recipe.piece_in == recipe.target_piece: # receita terminou todas as transformações
                     recipe.finished_date = self.clock.get_time()
+                    time = self.clock.diff_between_times(recipe.finished_date, recipe.sended_date)
+                    client_id = None
+                    for order in self.orders:
+                        if order.order_id == recipe.order_id:
+                            client_id = order.client_id
+                            break
+                    self.db.insert_piece_time(recipe, client_id, time)
                     self.updateRecipesActive("remove", recipe.recipe_id, recipe)
                     self.updateRecipesTerminated("add", recipe)
                     self.checkOrderComplete(recipe)
@@ -621,6 +666,7 @@ class Manager():
                         recipe = result
                         self.printAssociatedRecipes()
                         self.client.sendRecipe(recipe)
+                    self.db.update_recipe(recipe)
         return
           
 
@@ -643,10 +689,11 @@ class Manager():
             self.updatePiecesBottomWh()
             if order.status == order.PENDING and cur_pieces_bottom_wh[order.target_piece] >= order.quantity and order.expedition_date <= self.clock.curr_day:
                 order.status = order.SENDING
+                self.db.update_expediton_order(order)
                 # enviar order
                 print(emoji.emojize(f'\n{bcolors.BOLD}[MES]{bcolors.ENDC} :delivery_truck:  Sending order {bcolors.UNDERLINE}{order.order_id}{bcolors.ENDC}... :delivery_truck:'))
-                print(f'\n\t{bcolors.BOLD+bcolors.OKGREEN}->{bcolors.ENDC+bcolors.ENDC} Type: {str(order.target_piece)}')
-                print(f'\n\t{bcolors.BOLD+bcolors.OKGREEN}->{bcolors.ENDC+bcolors.ENDC} Quantity: {str(order.quantity)}')
+                print(f'\t{bcolors.BOLD+bcolors.OKGREEN}->{bcolors.ENDC+bcolors.ENDC} Type: {str(order.target_piece)}')
+                print(f'\t{bcolors.BOLD+bcolors.OKGREEN}->{bcolors.ENDC+bcolors.ENDC} Quantity: {str(order.quantity)}')
             if order.status == order.SENDING:
                 # número de linhas de expedição que vai ocupar. Cada linha ocupa máximo 6 peças
                 carriers = (order.quantity - order.quantity_sent) // 6
@@ -663,11 +710,15 @@ class Manager():
                         #     break
                         if i == carriers: # última linha de expedição
                             order.quantity_sent += last_pieces
+                            self.db.update_expediton_order(order)
                             self.carrier_occupied[index] = order.order_id # ocupar carrier
+                            self.db.update_carrier_occupied(index+1, order.order_id)
                             self.client.sendDelivery(index, order.target_piece, last_pieces) # enviar order
                         else:
                             order.quantity_sent += 6
+                            self.db.update_expediton_order(order)
                             self.carrier_occupied[index] = order.order_id # ocupar carrier
+                            self.db.update_carrier_occupied(index, order.order_id)
                             self.client.sendDelivery(index, order.target_piece, 6) # enviar order
                 # buscar indíces dos transportadores que possuem a ordem de expedição
                 carriers_position = [index for index, value in enumerate(self.carrier_occupied) if value == order.order_id]
@@ -676,23 +727,28 @@ class Manager():
                     if self.client.getDeliveryState(position):
                         counter += 1
                         self.carrier_occupied[position] = None
+                        self.db.update_carrier_occupied(position+1, None)
                 # se counter for igual ao carriers_position e a quantidade expedida for igual à quuantidade pretendida quer dizer que todas as linhas de expedição terminaram a entrega
                 if counter == len(carriers_position) and order.quantity == order.quantity_sent:
                     order.status = order.DONE
+                    self.db.update_expediton_order(order)
                     print(emoji.emojize(f'\n{bcolors.BOLD+bcolors.OKGREEN}[MES]{bcolors.ENDC + bcolors.ENDC} :grinning_face_with_big_eyes:  Order {bcolors.UNDERLINE}{order.order_id}{bcolors.ENDC} delivered successfully at {self.clock.get_time_pretty()}! :check_mark_button:'))
                     # remover receitas associadas a esta ordem de produção
                     for recipe in reversed(self.recipes):
                         if recipe.order_id == order.order_id:
                             self.updateRecipesTerminated("remove", recipe)
                             self.recipes.remove(recipe)
+                            self.db.remove_recipe(recipe)
                     # atualizar base de dados sobre estado da expedicão
                     self.db.expedition_production_status(order.order_id, self.clock.curr_day)
                     # remover ordem de expedição e adicionar à lista de ordens completas
                     self.completed_deliveries.append(order)
+                    self.db.insert_completed_expedition_order(order)
                     deliveries_to_remove.append(order)
                     # self.deliveries.remove(order)
         for i in range(len(deliveries_to_remove)):
             self.deliveries.remove(deliveries_to_remove[i])
+            self.db.remove_expedition_order(deliveries_to_remove[i])
 
 
 
@@ -707,9 +763,11 @@ class Manager():
             None
         '''
         if len(self.supplier_orders) > 0:
-            for order in self.supplier_orders[:]:
+            for order in reversed(self.supplier_orders):
                 if self.clock.curr_day >= order.day:
                     # receção de encomenda do fornecedor
+                    self.db.insert_completed_supply_order(order)
+                    self.db.remove_supply_order(order)
                     self.cin.spawnPieces(order.num_pieces)
                     self.completed_supplier_orders.append(order)
                     self.supplier_orders.remove(order)
@@ -726,7 +784,7 @@ class Manager():
             None
         '''
         for i, piece in enumerate(cur_pieces_bottom_wh):
-            cur_pieces_bottom_wh[piece] = self.client.getPieceBottomWH(piece) # As peças não têm tipo 0, mas sim de 1 a 9
+            cur_pieces_bottom_wh[piece] = self.client.getPieceBottomWH(i+1) # As peças não têm tipo 0, mas sim de 1 a 9
 
 
 
@@ -743,6 +801,7 @@ class Manager():
         '''
         # entre os segundos 2 e 5 de cada dia, requisitar à base de dados a cada segundo
         print(f'\n{bcolors.BOLD}[MES]{bcolors.ENDC} {bcolors.OKCYAN}Day{bcolors.ENDC}: {self.clock.curr_day}')
+        self.db.update_day(self.clock.curr_day)
         self.getProductionsOrders()
         self.getExpedictionOrders()
         self.getSupplierOrders()
@@ -752,10 +811,13 @@ class Manager():
         for order in self.orders:
             if self.clock.curr_day >= order.start_date and order.status == order.PENDING:
                 order.status = order.PRODUCING # passa a estado de produção e gera receitas
+                self.db.update_production_order(order)
                 krecipes = len(self.recipes)
                 for i in range(order.quantity):
                     recipe_index = krecipes + i
                     self.recipes.append(Recipe(order.order_id, recipe_index, order.target_piece))
+                    self.db.insert_recipe(Recipe(order.order_id, recipe_index, order.target_piece))
+                    self.db.insert_waiting_recipe(self.recipes[-1])
                     self.updateRecipesWaiting("add", self.recipes[-1]) # adicionadas à fila de espera. Serão enviadas para produção assim que possível
             
         self.printSupplierOrders()
