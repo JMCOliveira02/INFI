@@ -2,7 +2,7 @@
 
 
 
-class Suplier:
+class Supplier:
     def __init__(self, id: int, day: int, p1_p3_quantity: list[int, int]) -> None:
         self.id = id
         self.day = day
