@@ -1,6 +1,7 @@
 from mes import datetime
 
 from mes import Database
+from mes import bcolors
 from mes import date_diff_in_Seconds
 
 
@@ -12,6 +13,9 @@ class Clock:
         #self.initial_date = datetime.datetime.now()
         self.curr_time_seconds = date_diff_in_Seconds(datetime.datetime.now(), self.initial_date)
         self.curr_day = self.curr_time_seconds // 60
+        self.curr_time_seconds = self.curr_time_seconds % 60
+        print(f'\n{bcolors.BOLD}[MES]{bcolors.ENDC} Day {self.curr_day}: {str(self.initial_date)}')
+        self.db.update_day(self.curr_day)
 
 
 
@@ -87,7 +91,7 @@ class Clock:
 
     def diff_between_times(self, time1: tuple[int, int], time2: tuple[int, int]):
         '''
-        Função que retorna a diferença entre duas datas
+        Função que retorna a diferença entre duas datas. time1 - time2
 
         args:
             time1 (tuple[int, int]): primeira data (dias, segundos)
