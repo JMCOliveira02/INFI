@@ -16,6 +16,7 @@ from .expedition_order import *
 from .supplier import *
 from .transformations import *
 from .database import *
+from .persistence import *
 from .clock import *
 from .plccommunications import *
 from .scheduling import *
