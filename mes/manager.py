@@ -629,6 +629,7 @@ class Manager():
                         self.printAssociatedRecipes()
                         self.client.sendRecipe(recipe)
                 self.clock.update_time()
+            self.updateStock()
         return
           
 
@@ -689,10 +690,19 @@ class Manager():
                     order.status = order.DONE
                     print(emoji.emojize(f'\n{bcolors.BOLD+bcolors.OKGREEN}[MES]{bcolors.ENDC + bcolors.ENDC} :grinning_face_with_big_eyes:  Order {bcolors.UNDERLINE}{order.order_id}{bcolors.ENDC} delivered successfully at {self.clock.get_time_pretty()}! :check_mark_button:'))
                     # remover receitas associadas a esta ordem de produção
-                    for recipe in reversed(self.recipes):
-                        if recipe.order_id == order.order_id:
+                    # for recipe in reversed(self.recipes):
+                    #     if recipe.order_id == order.order_id:
+                    #         self.updateRecipesTerminated("remove", recipe)
+                    #         self.recipes.remove(recipe)
+                    recipes_to_remove = []
+                    for recipe in self.recipes:
+                        # if recipe.order_id == order.order_id:
+                        if recipe.client_id == order.client_id:
                             self.updateRecipesTerminated("remove", recipe)
-                            self.recipes.remove(recipe)
+                            recipes_to_remove.append(recipe)
+                    for i in range(len(recipes_to_remove)):
+                        print("Removing recipe: ", recipes_to_remove[i].global_id)
+                        self.recipes.remove(recipes_to_remove[i])
                     # atualizar base de dados sobre estado da expedicão
                     self.db.expedition_production_status(order.order_id, self.clock.curr_day)
                     # remover ordem de expedição e adicionar à lista de ordens completas
@@ -763,7 +773,7 @@ class Manager():
                 krecipes = len(self.recipes)
                 for i in range(order.quantity):
                     recipe_index = krecipes + i
-                    self.recipes.append(Recipe(order.order_id, recipe_index, order.target_piece))
+                    self.recipes.append(Recipe(order.order_id, order.client_id, recipe_index, order.target_piece))
                     self.updateRecipesWaiting("add", self.recipes[-1]) # adicionadas à fila de espera. Serão enviadas para produção assim que possível
             
         self.printSupplierOrders()
@@ -772,6 +782,35 @@ class Manager():
         self.printAssociatedRecipes()
         self.printRecipesStatus()
         return
+
+
+
+    def updateStock(self):
+        '''
+        Função que atualiza o stock de peças no armazém inferior no final do dia
+
+        args:
+            None
+        return:
+            None
+        '''
+        if ((self.clock.curr_time_seconds >= 50) and
+            (not self.bottom_updated)):
+            updatePiecesTopWh(self.client)
+            self.updatePiecesBottomWh()
+            cur_pieces = {
+                1: cur_pieces_top_wh[1],
+                2: cur_pieces_top_wh[2],
+                3: cur_pieces_top_wh[3],
+                4: cur_pieces_top_wh[4],
+                5: cur_pieces_bottom_wh[5],
+                6: cur_pieces_bottom_wh[6],
+                7: cur_pieces_bottom_wh[7],
+                8: cur_pieces_top_wh[8],
+                9: cur_pieces_bottom_wh[9]
+            }
+            self.db.insert_stock(self.clock.curr_day, cur_pieces)
+            self.bottom_updated = True
 
 
 
@@ -806,23 +845,7 @@ class Manager():
         Máquina de estados 
         '''
         # atualização da base de dados no final do dia para o stock de peças no armazém inferior
-        if ((self.clock.curr_time_seconds >= 50) and
-            (not self.bottom_updated)):
-            updatePiecesTopWh(self.client)
-            self.updatePiecesBottomWh()
-            cur_pieces = {
-                1: cur_pieces_top_wh[1],
-                2: cur_pieces_top_wh[2],
-                3: cur_pieces_top_wh[3],
-                4: cur_pieces_top_wh[4],
-                5: cur_pieces_bottom_wh[5],
-                6: cur_pieces_bottom_wh[6],
-                7: cur_pieces_bottom_wh[7],
-                8: cur_pieces_top_wh[8],
-                9: cur_pieces_bottom_wh[9]
-            }
-            self.db.insert_stock(self.clock.curr_day, cur_pieces)
-            self.bottom_updated = True
+        self.updateStock()
         # atualização da base de dados para o novo dia
         if ((self.clock.curr_time_seconds >= 8) and
             (self.prev_day != self.clock.curr_day)):

@@ -3,8 +3,9 @@ Class responsável por representar uma receita de produção. Assim como
 enviá-las para o PLC
 '''
 class Recipe():
-    def __init__(self, order_id: int, global_id: int, target_piece: int):
+    def __init__(self, order_id: int, client_id: int, global_id: int, target_piece: int):
         self.order_id = order_id
+        self.client_id = None # preenchido pelo escalonamento
         self.global_id = global_id # id único da receita
         self.recipe_id = None # o manager atribui um id único a cada receita. Se None, significa que a receita ainda não foi lançada para o shopfloor nem foi considerada para escalonamento
         self.machine_id = None # preenchido pelo escalonamento
